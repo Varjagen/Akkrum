@@ -652,25 +652,27 @@ var syncTimer=null;
 // ── DM SIDE: build and push ───────────────────────────────────────────────────
 
 function buildSyncPayload(){
-  // Embed the image of the currently pushed map directly in the payload.
-  // This is the ONLY map image we send — just the one players are looking at.
-  var pushedMap=forcedPlayerMapId?getMap(forcedPlayerMapId):null;
-
-  var mapMeta=maps.map(function(m){
-    return {id:m.id,name:m.name,mapType:m.mapType,parentMapId:m.parentMapId,tx:m.tx,
-            // embed image only for the currently pushed map
-            image:(m.id===forcedPlayerMapId&&m.image)?m.image:null};
+  // Send full map metadata, including any uploaded image.
+  var mapMeta = maps.map(function(m){
+    return {
+      id: m.id,
+      name: m.name,
+      mapType: m.mapType,
+      parentMapId: m.parentMapId,
+      tx: m.tx,
+      image: m.image || null
+    };
   });
 
   return {
-    v:3,
-    ts:Date.now(),
-    forcedPlayerMapId:forcedPlayerMapId,
-    pins:pins,
-    entities:entities.map(function(e){
-      return Object.assign({},e,{notes:e.type==='PC'?e.notes:''});
+    v: 4,
+    ts: Date.now(),
+    forcedPlayerMapId: forcedPlayerMapId,
+    pins: pins,
+    entities: entities.map(function(e){
+      return Object.assign({}, e, {notes: e.type === 'PC' ? e.notes : ''});
     }),
-    mapMeta:mapMeta
+    mapMeta: mapMeta
   };
 }
 
@@ -2085,12 +2087,8 @@ function updateSyncIndicator(state){
   }
 }
 
-// pushMapImage — images are now embedded in the main payload for the active map.
-// Just trigger a remote persist so the updated image goes out with next write.
+// pushMapImage — image is already stored in maps; just sync the new state.
 function pushMapImage(mapId,dataUrl){
-  if(!SYNC_BIN_ID||!SYNC_API_KEY)return;
-  // Image is already saved to the maps array by handleMapFile.
-  // remotePersist() will embed it in the next sync payload automatically.
   remotePersist();
 }
 
