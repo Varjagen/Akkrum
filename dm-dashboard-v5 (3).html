@@ -1,0 +1,2234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>DM Command</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg0:#09090f;--bg1:#0f1018;--bg2:#14151f;--bg3:#1a1b2a;--bg3h:#1f2035;--bgi:#0d0e18;
+  --bd:#252840;--bdh:#363b5e;
+  --t1:#e8e3d8;--t2:#9491a8;--t3:#4e4b62;
+  --gold:#c9a72a;--goldD:#7a6118;--goldBg:rgba(201,167,42,.1);
+  --red:#c0392b;--redB:#e74c3c;
+  --blue:#2980b9;--blueB:#3498db;
+  --green:#27ae60;--greenB:#2ecc71;
+  --purple:#8e44ad;--purpleB:#9b59b6;
+  --pc:#3498db;--mo:#e74c3c;--npc:#f39c12;
+  --r:6px;--rL:10px;
+  --sh:0 8px 32px rgba(0,0,0,.65);
+}
+html,body{height:100%;background:var(--bg0);color:var(--t1);font-family:'Crimson Pro',serif;font-size:16px;overflow:hidden}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:var(--bg1)}
+::-webkit-scrollbar-thumb{background:var(--bdh);border-radius:3px}
+
+/* ── LOGIN SCREEN ─────────────────────────────────────────────────────────── */
+#login-screen{position:fixed;inset:0;background:var(--bg0);display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;gap:0}
+#login-screen.hidden{display:none}
+.login-box{background:var(--bg2);border:1px solid var(--bd);border-radius:var(--rL);padding:36px 40px;width:340px;display:flex;flex-direction:column;gap:16px;box-shadow:var(--sh)}
+.login-title{font-family:'Cinzel',serif;font-size:22px;font-weight:700;color:var(--gold);text-align:center;letter-spacing:.07em}
+.login-sub{font-size:13px;color:var(--t3);text-align:center}
+.login-box input{width:100%;padding:8px 12px;font-size:14px;letter-spacing:.05em}
+.login-box .btn{width:100%;justify-content:center;padding:9px;font-size:14px}
+.login-mode-badge{text-align:center;font-size:12px;padding:4px 12px;border-radius:20px;font-family:'JetBrains Mono',monospace}
+.mode-dm{background:rgba(201,167,42,.12);color:var(--gold);border:1px solid var(--goldD)}
+.mode-player{background:rgba(52,152,219,.1);color:var(--blueB);border:1px solid #183858}
+
+/* ── LAYOUT ───────────────────────────────────────────────────────────────── */
+#app{display:flex;flex-direction:column;height:100vh}
+#app.hidden{display:none}
+#topbar{display:flex;align-items:center;gap:8px;padding:0 14px;height:50px;background:var(--bg2);border-bottom:1px solid var(--bd);flex-shrink:0;z-index:100;overflow-x:auto}
+#topbar::-webkit-scrollbar{display:none}
+.tb-title{font-family:'Cinzel',serif;font-size:17px;font-weight:700;color:var(--gold);letter-spacing:.08em;white-space:nowrap;margin-right:4px}
+.tb-sep{width:1px;height:26px;background:var(--bd);flex-shrink:0}
+.mode-indicator{font-family:'JetBrains Mono',monospace;font-size:10px;padding:2px 8px;border-radius:10px;white-space:nowrap}
+.mode-indicator.dm{background:rgba(201,167,42,.12);color:var(--gold);border:1px solid var(--goldD)}
+.mode-indicator.player{background:rgba(52,152,219,.1);color:var(--blueB);border:1px solid #183858}
+#main{display:flex;flex:1;overflow:hidden}
+#sidebar{width:300px;min-width:300px;background:var(--bg2);border-right:1px solid var(--bd);display:flex;flex-direction:column;overflow:hidden}
+#maparea{flex:1;position:relative;overflow:hidden;background:var(--bg0);display:flex;flex-direction:column}
+
+/* player mode hides sidebar */
+body.player-mode #sidebar{display:none}
+body.player-mode #topbar .dm-only{display:none}
+
+/* ── BUTTONS ──────────────────────────────────────────────────────────────── */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border-radius:var(--r);border:1px solid var(--bd);background:var(--bg3);color:var(--t1);font-family:'Crimson Pro',serif;font-size:13px;cursor:pointer;transition:all .13s;white-space:nowrap;flex-shrink:0;line-height:1.3}
+.btn:hover{border-color:var(--bdh);background:var(--bg3h)}
+.btn.gold{border-color:var(--goldD);color:var(--gold)}
+.btn.gold:hover{background:var(--goldBg);border-color:var(--gold)}
+.btn.red{border-color:#4a1818;color:var(--redB)}
+.btn.red:hover{background:rgba(192,57,43,.15)}
+.btn.blue{border-color:#183858;color:var(--blueB)}
+.btn.blue:hover{background:rgba(52,152,219,.12)}
+.btn.green{border-color:#1a4228;color:var(--greenB)}
+.btn.green:hover{background:rgba(46,204,113,.1)}
+.btn.purple{border-color:#3d1f5a;color:var(--purpleB)}
+.btn.purple:hover{background:rgba(155,89,182,.1)}
+.btn.active{border-color:var(--gold);color:var(--gold);background:var(--goldBg)}
+.btn.sm{padding:3px 8px;font-size:12px}
+
+/* ── INPUTS ───────────────────────────────────────────────────────────────── */
+input,textarea,select{background:var(--bgi);border:1px solid var(--bd);color:var(--t1);font-family:'Crimson Pro',serif;font-size:13px;border-radius:var(--r);padding:4px 8px;outline:none;transition:border-color .13s}
+input:focus,textarea:focus,select:focus{border-color:var(--bdh)}
+select option{background:var(--bg3)}
+.lbl{font-size:12px;color:var(--t2);display:block;margin-bottom:3px}
+
+/* ── MAP HEADER BAR (breadcrumb + map switcher) ───────────────────────────── */
+#map-header{display:flex;align-items:center;gap:8px;padding:6px 12px;background:var(--bg2);border-bottom:1px solid var(--bd);flex-shrink:0;min-height:38px}
+.map-breadcrumb{display:flex;align-items:center;gap:5px;flex:1;overflow:hidden}
+.map-bc-item{font-family:'Cinzel',serif;font-size:12px;color:var(--t2);cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px}
+.map-bc-item:hover{color:var(--t1)}
+.map-bc-item.current{color:var(--gold)}
+.map-bc-sep{color:var(--t3);font-size:11px}
+.map-bc-type{font-size:10px;color:var(--t3);font-family:'JetBrains Mono',monospace;background:var(--bg3);border:1px solid var(--bd);border-radius:4px;padding:1px 5px;white-space:nowrap}
+/* Forced view banner for players */
+#player-push-banner{background:rgba(155,89,182,.15);border-bottom:1px solid var(--purpleB);padding:4px 14px;font-size:12px;color:var(--purpleB);text-align:center;display:none;flex-shrink:0}
+#player-push-banner.show{display:block}
+
+/* ── MAP CANVAS ───────────────────────────────────────────────────────────── */
+#map-canvas{flex:1;position:relative;overflow:hidden}
+#map-canvas.dragover{outline:2px dashed var(--gold);outline-offset:-4px}
+#map-wrapper{position:absolute;transform-origin:0 0;user-select:none}
+#map-wrapper img{display:block;pointer-events:none;max-width:none}
+#map-grid{position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(var(--bd) 1px,transparent 1px),linear-gradient(90deg,var(--bd) 1px,transparent 1px);background-size:50px 50px;opacity:.3;display:none}
+#map-placeholder{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:var(--t3)}
+.ph-icon{font-size:56px;opacity:.15}
+.ph-title{font-family:'Cinzel',serif;font-size:17px;opacity:.3}
+.ph-sub{font-size:13px;opacity:.2}
+#map-controls{position:absolute;bottom:14px;right:14px;display:flex;flex-direction:column;gap:4px;z-index:20}
+
+/* ── PINS ─────────────────────────────────────────────────────────────────── */
+.pin{position:absolute;transform:translate(-50%,-100%);cursor:grab;z-index:10;user-select:none}
+.pin:hover{z-index:15}
+.pin.sel{z-index:20}
+.pin svg{display:block;filter:drop-shadow(0 2px 4px rgba(0,0,0,.7))}
+.pin.sel svg{filter:drop-shadow(0 0 6px rgba(255,255,255,.8))}
+/* DM-only hidden pins — dimmed with dashed ring */
+.pin.dm-hidden{opacity:0.45}
+.pin.dm-hidden svg{filter:drop-shadow(0 0 3px rgba(155,89,182,.7))}
+.pin-lbl{position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);font-family:'Cinzel',serif;font-size:9px;font-weight:600;color:var(--t1);white-space:nowrap;text-shadow:0 1px 4px #000,0 0 8px #000;pointer-events:none}
+.pin-hidden-badge{position:absolute;top:-6px;right:-8px;font-size:9px;background:rgba(155,89,182,.85);color:#fff;border-radius:3px;padding:0 3px;pointer-events:none;font-family:'JetBrains Mono',monospace}
+.pin-tip{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:var(--bg2);border:1px solid var(--bdh);border-radius:var(--r);padding:7px 11px;font-size:12px;min-width:130px;box-shadow:var(--sh);pointer-events:none;white-space:nowrap;z-index:30;display:none}
+.pin:hover .pin-tip{display:block}
+.pin.sel .pin-tip{display:none}
+.tip-name{font-family:'Cinzel',serif;font-size:12px;font-weight:600;margin-bottom:3px}
+.tip-stats{font-size:11px;color:var(--t2);font-family:'JetBrains Mono',monospace}
+
+/* ── SIDEBAR ──────────────────────────────────────────────────────────────── */
+#sb-search{padding:9px 10px 7px;border-bottom:1px solid var(--bd)}
+#sb-search input{width:100%}
+#sb-filters{display:flex;gap:4px;padding:6px 10px;border-bottom:1px solid var(--bd);flex-wrap:wrap}
+.chip{padding:2px 8px;border-radius:20px;border:1px solid var(--bd);font-size:11px;cursor:pointer;color:var(--t2);background:var(--bg3);transition:all .12s;font-family:'JetBrains Mono',monospace}
+.chip:hover{border-color:var(--bdh)}
+.chip.on{border-color:var(--gold);color:var(--gold);background:var(--goldBg)}
+.chip.pc.on{border-color:var(--pc);color:var(--pc);background:rgba(52,152,219,.1)}
+.chip.mo.on{border-color:var(--mo);color:var(--mo);background:rgba(231,76,60,.1)}
+.chip.npc.on{border-color:var(--npc);color:var(--npc);background:rgba(243,156,18,.1)}
+#entity-list{overflow-y:auto;flex:1;padding:7px}
+.empty-msg{text-align:center;color:var(--t3);padding:36px 16px;font-size:13px;font-style:italic}
+#sb-footer{padding:6px 10px;border-top:1px solid var(--bd);font-size:11px;color:var(--t3)}
+
+/* ── ENTITY CARDS ─────────────────────────────────────────────────────────── */
+.ecard{border:1px solid var(--bd);border-radius:var(--rL);background:var(--bg3);margin-bottom:5px;transition:all .13s;cursor:pointer;user-select:none;overflow:hidden}
+.ecard:hover{border-color:var(--bdh);background:var(--bg3h)}
+.ecard.sel{border-color:var(--gold)!important;box-shadow:0 0 0 1px var(--goldD)}
+.ecard.dead{opacity:.45}
+.ecard.onmap{border-left:3px solid var(--green)}
+/* DM-hidden entity cards get a purple tint */
+.ecard.dm-hidden-card{border-left:3px solid var(--purpleB);opacity:.7}
+.ecard-head{display:flex;align-items:center;gap:7px;padding:7px 9px}
+.dot{width:11px;height:11px;border-radius:50%;flex-shrink:0}
+.card-name{font-family:'Cinzel',serif;font-size:12px;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.badge{font-size:10px;padding:1px 5px;border-radius:10px;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.04em}
+.badge-PC{background:rgba(52,152,219,.2);color:var(--pc);border:1px solid rgba(52,152,219,.3)}
+.badge-Monster{background:rgba(231,76,60,.2);color:var(--mo);border:1px solid rgba(231,76,60,.3)}
+.badge-NPC{background:rgba(243,156,18,.2);color:var(--npc);border:1px solid rgba(243,156,18,.3)}
+.vis-badge{font-size:9px;padding:1px 5px;border-radius:8px;font-family:'JetBrains Mono',monospace;white-space:nowrap}
+.vis-hidden{background:rgba(155,89,182,.2);color:var(--purpleB);border:1px solid rgba(155,89,182,.3)}
+.vis-shown{background:rgba(46,204,113,.1);color:var(--greenB);border:1px solid rgba(46,204,113,.2)}
+.hpbar{height:3px;background:var(--bd);margin:0 9px 5px}
+.hpfill{height:100%;transition:width .3s}
+.cstats{display:flex;gap:8px;padding:0 9px 5px;flex-wrap:wrap}
+.st{display:flex;flex-direction:column;align-items:center;min-width:28px}
+.stv{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:500}
+.stl{color:var(--t3);font-size:10px}
+.core-stats{display:flex;gap:6px;padding:0 0 6px;flex-wrap:wrap}
+.cs{display:flex;flex-direction:column;align-items:center;min-width:34px;background:var(--bg2);border:1px solid var(--bd);border-radius:4px;padding:3px 4px}
+.csv{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:500}
+.csl{font-size:9px;color:var(--t3);margin-top:1px}
+.iinit-edit{width:34px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:11px;padding:1px 3px;background:var(--bgi);border:1px solid var(--bdh);color:var(--t1);border-radius:3px}
+.iroll-edit{width:34px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:11px;padding:1px 3px;background:var(--bgi);border:1px solid var(--gold);color:var(--gold);border-radius:3px}
+.init-col-hd{display:flex;align-items:center;gap:6px;padding:2px 11px 3px;border-bottom:1px solid var(--bd)}
+.init-col-hd span{font-size:9px;color:var(--t3);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.06em}
+.init-col-hd .ich-name{flex:1}
+.ich-bonus{width:34px;text-align:center}
+.ich-roll{width:34px;text-align:center;color:var(--goldD)}
+.cconds{display:flex;flex-wrap:wrap;gap:2px;padding:0 9px 5px}
+.cond{font-size:9px;padding:1px 5px;border-radius:10px;font-family:'JetBrains Mono',monospace}
+.cloc{font-size:11px;color:var(--t3);padding:0 9px 5px}
+.cexp{border-top:1px solid var(--bd);padding:7px 9px;display:none}
+.ecard.expanded .cexp{display:block}
+.hp-row{display:flex;align-items:center;gap:5px;margin-bottom:7px}
+.hp-row input{width:52px;text-align:center;font-family:'JetBrains Mono',monospace}
+.cacts{display:flex;gap:4px;margin-top:7px;flex-wrap:wrap}
+.init-edit-row{display:flex;align-items:center;gap:5px;margin-bottom:6px}
+.init-edit-row label{font-size:11px;color:var(--t3)}
+.init-edit-row input{width:52px;text-align:center;font-family:'JetBrains Mono',monospace}
+.cond-pills{display:flex;flex-wrap:wrap;gap:3px;margin-top:4px}
+.cpill{font-size:9px;padding:2px 6px;border-radius:10px;border:1px solid var(--bd);color:var(--t3);cursor:pointer;font-family:'JetBrains Mono',monospace;transition:all .1s}
+.cpill:hover{border-color:var(--bdh);color:var(--t2)}
+.cpill.on{border-color:var(--goldD);background:rgba(201,167,42,.15);color:var(--gold)}
+.cnotes{font-size:11px;color:var(--t2);font-style:italic;margin-top:6px}
+.cattacks{font-size:11px;color:var(--t2);margin-top:4px}
+
+/* ── OVERLAYS (Initiative, Presets, Maps) ────────────────────────────────── */
+#init-panel{position:absolute;top:14px;right:14px;width:230px;background:var(--bg2);border:1px solid var(--bd);border-radius:var(--rL);box-shadow:var(--sh);z-index:20;overflow:hidden;display:none}
+#init-panel.show{display:block}
+.init-hd{display:flex;align-items:center;justify-content:space-between;padding:7px 11px;background:rgba(201,167,42,.07);border-bottom:1px solid var(--bd)}
+.init-ttl{font-family:'Cinzel',serif;font-size:11px;color:var(--gold)}
+.init-sub{font-size:10px;color:var(--t3);padding:4px 11px;border-bottom:1px solid var(--bd);font-style:italic}
+.init-list{max-height:280px;overflow-y:auto}
+.init-row{display:flex;align-items:center;gap:6px;padding:4px 11px;border-bottom:1px solid var(--bd);cursor:pointer;transition:background .1s}
+.init-row:hover{background:var(--bg3h)}
+.init-row.active{background:rgba(201,167,42,.1);border-left:2px solid var(--gold)}
+.idot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.iname{flex:1;font-family:'Crimson Pro',serif;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+#preset-panel{position:absolute;top:14px;left:14px;width:220px;background:var(--bg2);border:1px solid var(--bd);border-radius:var(--rL);box-shadow:var(--sh);z-index:20;overflow:hidden;display:none}
+#preset-panel.show{display:block}
+.preset-hd{display:flex;align-items:center;justify-content:space-between;padding:7px 11px;background:rgba(41,128,185,.06);border-bottom:1px solid var(--bd)}
+.preset-ttl{font-family:'Cinzel',serif;font-size:11px;color:var(--blueB)}
+.preset-list{max-height:240px;overflow-y:auto}
+.preset-row{display:flex;align-items:center;gap:5px;padding:5px 8px;border-bottom:1px solid var(--bd);cursor:pointer;transition:background .1s}
+.preset-row:hover{background:var(--bg3h)}
+.preset-row-name{flex:1;font-size:12px;font-family:'Crimson Pro',serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.preset-row-count{font-size:10px;color:var(--t3);font-family:'JetBrains Mono',monospace;white-space:nowrap}
+.preset-actions{display:flex;gap:3px;flex-shrink:0}
+.preset-new{padding:8px 11px;border-top:1px solid var(--bd);display:flex;gap:5px}
+.preset-new input{flex:1;font-size:12px}
+
+/* ── MAP MANAGER PANEL ────────────────────────────────────────────────────── */
+#map-manager{position:absolute;top:14px;left:14px;width:260px;background:var(--bg2);border:1px solid var(--bdh);border-radius:var(--rL);box-shadow:var(--sh);z-index:25;overflow:hidden;display:none}
+#map-manager.show{display:block}
+.mm-hd{display:flex;align-items:center;justify-content:space-between;padding:7px 11px;background:rgba(46,204,113,.05);border-bottom:1px solid var(--bd)}
+.mm-ttl{font-family:'Cinzel',serif;font-size:11px;color:var(--greenB)}
+.mm-list{max-height:300px;overflow-y:auto}
+.mm-row{display:flex;align-items:center;gap:5px;padding:5px 10px;border-bottom:1px solid var(--bd);cursor:pointer;transition:background .1s}
+.mm-row:hover{background:var(--bg3h)}
+.mm-row.active-map{border-left:2px solid var(--gold);background:rgba(201,167,42,.06)}
+.mm-row.pushed-map{border-right:2px solid var(--purpleB)}
+.mm-indent{padding-left:18px}
+.mm-name{flex:1;font-size:12px;font-family:'Crimson Pro',serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mm-type{font-size:9px;color:var(--t3);font-family:'JetBrains Mono',monospace;background:var(--bg3);border-radius:3px;padding:0 4px;white-space:nowrap}
+.mm-actions{display:flex;gap:3px;flex-shrink:0}
+.mm-footer{padding:8px 10px;border-top:1px solid var(--bd);display:flex;gap:5px;flex-wrap:wrap}
+
+/* ── DM PUSH BANNER ───────────────────────────────────────────────────────── */
+#push-status{position:absolute;bottom:60px;right:14px;background:var(--bg2);border:1px solid var(--purpleB);border-radius:var(--r);padding:7px 12px;font-size:12px;z-index:20;display:none;min-width:180px}
+#push-status.show{display:block}
+#push-status .ps-label{font-size:10px;color:var(--t3);font-family:'JetBrains Mono',monospace;margin-bottom:3px}
+#push-status .ps-map{font-family:'Cinzel',serif;font-size:13px;color:var(--purpleB)}
+
+/* ── MODAL ────────────────────────────────────────────────────────────────── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:200;display:flex;align-items:center;justify-content:center}
+.modal{background:var(--bg2);border:1px solid var(--bdh);border-radius:var(--rL);width:560px;max-width:95vw;max-height:88vh;overflow-y:auto;box-shadow:var(--sh)}
+.modal-hd{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--bd);position:sticky;top:0;background:var(--bg2);z-index:1}
+.modal-ttl{font-family:'Cinzel',serif;font-size:15px;color:var(--gold)}
+.modal-body{padding:18px}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fgrid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.fgrid4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.ffull{grid-column:1/-1}
+.fg{display:flex;flex-direction:column;gap:3px}
+.fg input,.fg select,.fg textarea{width:100%}
+.fg textarea{resize:vertical;min-height:65px}
+.sec{font-family:'Cinzel',serif;font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.1em;margin:14px 0 7px;padding-bottom:3px;border-bottom:1px solid var(--bd)}
+.modal-ft{padding:12px 18px;border-top:1px solid var(--bd);display:flex;justify-content:flex-end;gap:7px;position:sticky;bottom:0;background:var(--bg2)}
+.swatches{display:flex;gap:5px;flex-wrap:wrap;margin-top:3px}
+.sw{width:22px;height:22px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all .12s;flex-shrink:0}
+.sw.on{border-color:#fff;transform:scale(1.18)}
+
+/* ── PLAYER VIEW OVERLAY ──────────────────────────────────────────────────── */
+#player-waiting{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:var(--t3);background:var(--bg0)}
+#player-waiting.show{display:flex}
+.pw-icon{font-size:48px;opacity:.2}
+.pw-title{font-family:'Cinzel',serif;font-size:18px;opacity:.35}
+.pw-sub{font-size:13px;opacity:.2}
+
+/* ── TOAST ────────────────────────────────────────────────────────────────── */
+#toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--bg2);border:1px solid var(--bdh);border-radius:var(--r);padding:7px 15px;font-size:13px;color:var(--t1);box-shadow:var(--sh);z-index:999;pointer-events:none;opacity:0;transition:opacity .2s}
+#toast.show{opacity:1}
+/* Sync setup panel */
+#sync-panel{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:8000;display:none;align-items:center;justify-content:center}
+#sync-panel.show{display:flex}
+.sync-box{background:var(--bg2);border:1px solid var(--bdh);border-radius:var(--rL);padding:28px 32px;width:480px;max-width:95vw;display:flex;flex-direction:column;gap:14px;box-shadow:var(--sh);max-height:90vh;overflow-y:auto}
+.sync-title{font-family:'Cinzel',serif;font-size:18px;color:var(--gold);text-align:center}
+.sync-step{font-size:12px;color:var(--t3);padding:10px 14px;background:var(--bg3);border-radius:var(--r);border-left:3px solid var(--bd);line-height:1.6}
+.sync-step a{color:var(--blueB)}
+.sync-status{font-size:11px;font-family:'JetBrains Mono',monospace;padding:6px 10px;border-radius:var(--r);margin-top:4px}
+.sync-status.ok{background:rgba(46,204,113,.1);color:var(--greenB);border:1px solid rgba(46,204,113,.2)}
+.sync-status.err{background:rgba(231,76,60,.1);color:var(--redB);border:1px solid rgba(231,76,60,.2)}
+.sync-status.info{background:var(--bg3);color:var(--t2);border:1px solid var(--bd)}
+/* Sync indicator in topbar */
+.sync-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:3px}
+.sync-dot.ok{background:var(--greenB)}
+.sync-dot.err{background:var(--redB)}
+.sync-dot.off{background:var(--t3)}
+/* Player view additions */
+#player-card-panel{display:none;flex-direction:column;background:var(--bg2);border-bottom:1px solid var(--bd);max-height:220px;overflow-y:auto;flex-shrink:0}
+.pin.my-pc{cursor:grab}
+.pin.my-pc svg{filter:drop-shadow(0 0 5px rgba(201,167,42,.9))}
+.pin.no-drag{cursor:default}
+</style>
+</head>
+<body>
+
+<!-- ═══ LOGIN SCREEN ═══════════════════════════════════════════════════════ -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-title">DM Command</div>
+    <div class="login-sub">Enter the DM password for full access,<br>or press Enter / click Join to enter as a player.</div>
+    <input type="password" id="login-pw" placeholder="DM password (optional)" autocomplete="off"/>
+    <button class="btn gold" id="login-btn">Enter</button>
+    <div id="login-mode-display" class="login-mode-badge mode-player" style="display:none"></div>
+  </div>
+</div>
+
+<!-- Online Sync Setup Panel -->
+<div id="sync-panel">
+  <div class="sync-box">
+    <div class="sync-title">Online Sync Setup</div>
+    <div class="sync-step">
+      <strong style="color:var(--t1)">1. Create a free JSONBin account</strong><br>
+      Go to <a href="https://jsonbin.io" target="_blank">jsonbin.io</a>, sign up free, then go to <strong>API Keys</strong> and copy your <strong>Master Key</strong>.
+    </div>
+    <div class="fg"><label class="lbl">JSONBin Master Key (X-Master-Key)</label>
+      <input type="password" id="sync-apikey" placeholder="$2b$10$..." style="font-family:JetBrains Mono,monospace;font-size:12px">
+    </div>
+    <div class="sync-step">
+      <strong style="color:var(--t1)">2. Create a sync bin</strong><br>
+      Click <strong>Create Bin</strong> below. This creates a private bin where your game state will be stored. Do this once per campaign.
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn gold" id="sync-create-btn">Create New Bin</button>
+      <button class="btn blue" id="sync-test-btn">Test Connection</button>
+    </div>
+    <div id="sync-main-status" class="sync-status info" style="display:none"></div>
+    <div class="sync-step">
+      <strong style="color:var(--t1)">3. Share with players</strong><br>
+      Send players this URL. They can read the bin without a key (it's public for reading):<br>
+      <span id="sync-share-url" style="word-break:break-all;color:var(--blueB);font-family:JetBrains Mono,monospace;font-size:11px"></span><br>
+      <span style="color:var(--t3);font-size:10px">The key in the URL is read-only context — only the bin ID + your key together allow reading. Players cannot write.</span>
+    </div>
+    <div class="sync-step" style="border-left-color:var(--goldD)">
+      <strong style="color:var(--gold)">Already have a bin?</strong> Enter the bin ID directly:
+      <div style="display:flex;gap:6px;margin-top:6px">
+        <input id="sync-binid-manual" placeholder="Bin ID (e.g. 64abc...)" style="flex:1;font-family:JetBrains Mono,monospace;font-size:12px">
+        <button class="btn sm" id="sync-setbin-btn">Use This Bin</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px">
+      <button class="btn red sm" id="sync-clear-btn">Clear Sync Config</button>
+      <button class="btn sm" id="sync-close-btn">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- PC Claim Modal -->
+<div id="pc-claim-screen" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:5000;align-items:center;justify-content:center">
+  <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:var(--rL);padding:28px 32px;width:320px;display:flex;flex-direction:column;gap:14px;box-shadow:var(--sh)">
+    <div style="font-family:Cinzel,serif;font-size:18px;font-weight:700;color:var(--blueB);text-align:center">Your Character</div>
+    <div style="font-size:13px;color:var(--t3);text-align:center">Select your PC token to move it on the map.</div>
+    <div id="pc-claim-list" style="display:flex;flex-direction:column;gap:5px;max-height:220px;overflow-y:auto"></div>
+    <button class="btn blue" id="pc-claim-skip" style="font-size:13px;justify-content:center">Join as Observer</button>
+  </div>
+</div>
+
+<!-- ═══ MAIN APP ════════════════════════════════════════════════════════════ -->
+<div id="app" class="hidden">
+
+  <!-- TOP BAR -->
+  <div id="topbar">
+    <span class="tb-title">&#9876; DM Command</span>
+    <span id="mode-indicator" class="mode-indicator dm">DM</span>
+    <div class="tb-sep"></div>
+
+    <!-- DM-only controls -->
+    <label class="btn gold dm-only" title="Upload map image" style="cursor:pointer">Map Image
+      <input type="file" accept="image/*" id="map-upload" style="display:none">
+    </label>
+    <button class="btn gold dm-only" id="btn-add">+ Entity</button>
+    <button class="btn green dm-only" id="btn-maps">Maps</button>
+    <div class="tb-sep dm-only"></div>
+    <button class="btn active" id="btn-labels">Labels</button>
+    <button class="btn dm-only" id="btn-grid">Grid</button>
+    <button class="btn dm-only" id="btn-init">Initiative</button>
+    <button class="btn blue dm-only" id="btn-preset">Presets</button>
+
+    <div style="flex:1;min-width:4px"></div>
+
+    <!-- DM visibility shortcuts -->
+    <button class="btn green dm-only" id="btn-reveal-all" style="font-size:11px" title="Reveal all pins on this map">Reveal All</button>
+    <button class="btn dm-only" id="btn-hide-all" style="font-size:11px;border-color:#3d1f5a;color:var(--purpleB)" title="Hide all pins on this map">Hide All</button>
+    <!-- Push to players button (DM only) -->
+    <button class="btn purple dm-only" id="btn-push" title="Show current map to all players">&#128065; Push View</button>
+    <button class="btn gold dm-only" id="btn-force-sync" title="Force-write full state including map image to sync bin" style="font-size:11px">&#8679; Sync Now</button>
+    <div class="tb-sep dm-only"></div>
+    <button class="btn dm-only" id="btn-sync-setup" title="Online sync configuration" style="font-size:11px"><span id="sync-indicator" class="sync-dot off"></span>Sync</button>
+    <button class="btn dm-only" id="btn-export">Export</button>
+    <label class="btn dm-only" style="cursor:pointer">Import
+      <input type="file" accept=".json" id="json-import" style="display:none">
+    </label>
+    <button class="btn red" id="btn-logout" title="Switch mode / logout" style="font-size:11px">Exit</button>
+  </div>
+
+  <!-- MAIN AREA -->
+  <div id="main">
+
+    <!-- SIDEBAR (DM only) -->
+    <div id="sidebar">
+      <div id="sb-search"><input type="text" id="search" placeholder="Search entities..." style="width:100%"></div>
+      <div id="sb-filters">
+        <span class="chip pc" data-filter="type" data-val="PC">PC</span>
+        <span class="chip mo" data-filter="type" data-val="Monster">Monster</span>
+        <span class="chip npc" data-filter="type" data-val="NPC">NPC</span>
+        <span class="chip" data-filter="alive" data-val="alive">Alive</span>
+        <span class="chip" data-filter="alive" data-val="dead">Dead</span>
+        <span class="chip" data-filter="map" data-val="onmap">On Map</span>
+        <span class="chip" data-filter="vis" data-val="hidden">Hidden</span>
+      </div>
+      <div id="entity-list"></div>
+      <div id="sb-footer"></div>
+    </div>
+
+    <!-- MAP AREA -->
+    <div id="maparea">
+      <!-- Map breadcrumb header -->
+      <div id="map-header">
+        <div class="map-breadcrumb" id="map-breadcrumb"></div>
+        <span id="map-type-badge" class="map-bc-type"></span>
+        <!-- DM: push this map to players -->
+        <button class="btn sm purple dm-only" id="btn-push-this" title="Push this map to players">Push</button>
+      </div>
+
+      <!-- Player: forced-view banner -->
+      <div id="player-push-banner">&#128065; DM is showing you this location</div>
+
+      <!-- Player push banner -->
+      <!-- player-push-banner already exists in v3 HTML above -->
+
+      <!-- Player card panel: compact cards for revealed entities -->
+      <div id="player-card-panel">
+        <div style="display:flex;align-items:center;gap:8px;padding:5px 12px;border-bottom:1px solid var(--bd);flex-shrink:0">
+          <span style="font-family:Cinzel,serif;font-size:11px;color:var(--t2)">Revealed</span>
+          <span id="player-card-count" style="font-size:10px;color:var(--t3);font-family:JetBrains Mono,monospace;margin-left:auto"></span>
+          <button id="btn-claim-pc" class="btn sm blue" style="font-size:10px" title="Pick your PC token">My Token</button>
+        </div>
+        <div id="player-card-list" style="display:flex;flex-wrap:wrap;gap:6px;padding:8px 12px"></div>
+      </div>
+
+      <div id="map-canvas">
+        <div id="map-wrapper">
+          <img id="map-img" src="" alt="" style="display:none" draggable="false"/>
+          <div id="map-grid"></div>
+        </div>
+
+        <!-- No map yet -->
+        <div id="map-placeholder">
+          <div class="ph-icon">&#128506;</div>
+          <div class="ph-title">No Map Loaded</div>
+          <div class="ph-sub" id="ph-sub-text">Upload a map image to get started</div>
+          <label class="btn gold dm-only" style="cursor:pointer;margin-top:10px">Upload Map Image
+            <input type="file" accept="image/*" id="map-upload2" style="display:none">
+          </label>
+        </div>
+
+        <!-- Player waiting screen -->
+        <div id="player-waiting">
+          <div class="pw-icon">&#128505;</div>
+          <div class="pw-title" id="pw-title-text">Waiting for DM</div>
+          <div class="pw-sub" id="pw-sub-text-wait">The DM hasn't shared a view yet</div>
+          <div id="pw-sync-status" style="margin-top:8px;font-family:JetBrains Mono,monospace;font-size:10px;color:var(--t3)"></div>
+        </div>
+
+        <!-- Map controls -->
+        <div id="map-controls">
+          <button class="btn sm" id="zoom-in">+</button>
+          <button class="btn sm" id="zoom-out">-</button>
+          <button class="btn sm" id="zoom-reset">Reset</button>
+        </div>
+
+        <!-- Initiative panel -->
+        <div id="init-panel">
+          <div class="init-hd">
+            <span class="init-ttl">Initiative Order</span>
+            <div style="display:flex;gap:4px">
+              <button class="btn sm gold" id="init-roll">Roll</button>
+              <button class="btn sm" id="init-next">Next</button>
+              <button class="btn sm" id="init-close">X</button>
+            </div>
+          </div>
+          <div class="init-sub" id="init-sub">PCs &amp; Monsters on map only</div>
+          <div class="init-list" id="init-list"></div>
+        </div>
+
+        <!-- Preset panel -->
+        <div id="preset-panel">
+          <div class="preset-hd">
+            <span class="preset-ttl">Encounter Presets</span>
+            <button class="btn sm" id="preset-close">X</button>
+          </div>
+          <div class="preset-list" id="preset-list"></div>
+          <div class="preset-new">
+            <input type="text" id="preset-name" placeholder="Preset name..." />
+            <button class="btn sm gold" id="preset-save">Save</button>
+          </div>
+        </div>
+
+        <!-- Map manager panel -->
+        <div id="map-manager">
+          <div class="mm-hd">
+            <span class="mm-ttl">Maps</span>
+            <div style="display:flex;gap:4px">
+              <button class="btn sm green" id="mm-new">+ New</button>
+              <button class="btn sm" id="mm-close">X</button>
+            </div>
+          </div>
+          <div class="mm-list" id="mm-list"></div>
+          <div class="mm-footer">
+            <button class="btn sm" id="mm-parent" title="Go to parent map">&#8593; Parent</button>
+          </div>
+        </div>
+
+        <!-- DM push status indicator -->
+        <div id="push-status">
+          <div class="ps-label">PUSHED TO PLAYERS</div>
+          <div class="ps-map" id="push-status-name">—</div>
+          <div style="margin-top:5px;display:flex;gap:5px">
+            <button class="btn sm red" id="btn-release-push">Release</button>
+          </div>
+        </div>
+
+      </div><!-- /#map-canvas -->
+    </div><!-- /#maparea -->
+  </div><!-- /#main -->
+</div><!-- /#app -->
+
+<div class="overlay" id="modal-overlay" style="display:none"></div>
+<div id="toast"></div>
+
+<script>
+'use strict';
+// ═══════════════════════════════════════════════════════════════════════════
+// CONSTANTS
+// ═══════════════════════════════════════════════════════════════════════════
+
+var CONDITIONS=['Poisoned','Stunned','Blinded','Deafened','Frightened','Grappled','Incapacitated','Invisible','Paralyzed','Petrified','Prone','Restrained','Exhausted','Concentrating','Hidden','Dead'];
+var COND_COLORS={Poisoned:'#27ae60',Stunned:'#8e44ad',Blinded:'#7f8c8d',Deafened:'#95a5a6',Frightened:'#e67e22',Grappled:'#d35400',Incapacitated:'#c0392b',Invisible:'#bdc3c7',Paralyzed:'#9b59b6',Petrified:'#7f8c8d',Prone:'#f1c40f',Restrained:'#e74c3c',Exhausted:'#fd79a8',Concentrating:'#3498db',Hidden:'#2c3e50',Dead:'#636e72'};
+var PIN_COLORS=['#4fc3f7','#ef5350','#ffb74d','#a29bfe','#55efc4','#fdcb6e','#e17055','#74b9ff','#fd79a8','#00cec9','#badc58','#ff7675'];
+var CORE_STATS=['str','dex','con','int','wiz','cha','plr'];
+var CORE_LABELS={str:'STR',dex:'DEX',con:'CON',int:'INT',wiz:'WIZ',cha:'CHA',plr:'PLR'};
+var CORE_TITLES={str:'Strength',dex:'Dexterity',con:'Constitution',int:'Intelligence',wiz:'Wisdom',cha:'Charisma',plr:'Plague Resistance'};
+var MAP_TYPES=['world','region','town','building','dungeon','interior','wilderness','other'];
+
+// ─── AUTH ─────────────────────────────────────────────────────────────────────
+// NOTE: This is lightweight session-level access control, not real security.
+// Replace this block with a proper auth system when needed.
+var DM_PASSWORD='MajaIsAQT3.14';
+function checkPassword(pw){return pw===DM_PASSWORD;}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SAMPLE DATA
+// ═══════════════════════════════════════════════════════════════════════════
+
+var SAMPLE_ENTITIES=[
+  {id:'pc1',type:'PC',name:'Aelindra Moonwhisper',color:'#4fc3f7',ac:16,hp:42,maxHp:42,speed:30,initiative:4,pp:16,conditions:[],notes:'Elven ranger. Dex-based, favors ambushes.',location:'Camp Ashveil',cls:'Ranger',level:6,player:'Sophie',cr:'',attacks:'',faction:'',str:10,dex:18,con:12,int:14,wiz:16,cha:11,plr:8},
+  {id:'pc2',type:'PC',name:'Garret Ironfoot',color:'#e57373',ac:18,hp:55,maxHp:55,speed:25,initiative:1,pp:11,conditions:['Concentrating'],notes:'Dwarven paladin. Aura of Protection active.',location:'Camp Ashveil',cls:'Paladin',level:6,player:'Marco',cr:'',attacks:'',faction:'',str:18,dex:8,con:16,int:10,wiz:12,cha:16,plr:14},
+  {id:'pc3',type:'PC',name:'Sable Vex',color:'#ce93d8',ac:13,hp:31,maxHp:31,speed:30,initiative:3,pp:13,conditions:[],notes:'Tiefling warlock. Eldritch blast + hex.',location:'Camp Ashveil',cls:'Warlock',level:6,player:'Yuki',cr:'',attacks:'',faction:'',str:8,dex:14,con:12,int:16,wiz:13,cha:18,plr:6},
+  {id:'m1',type:'Monster',name:'Tharusk the Warlord',color:'#ef5350',ac:17,hp:89,maxHp:89,speed:30,initiative:2,pp:14,conditions:[],notes:'Main villain. Intimidation aura.',location:'Throne Room',cls:'',level:0,player:'',cr:'6',attacks:'Greatsword +7 (2d6+5). Roar recharge 5-6.',faction:'',str:20,dex:12,con:18,int:12,wiz:10,cha:15,plr:12},
+  {id:'m2',type:'Monster',name:'Cave Troll',color:'#ff8a65',ac:15,hp:63,maxHp:63,speed:30,initiative:-1,pp:10,conditions:[],notes:'Regenerates 10 HP/round. Fire stops regen.',location:'Cavern B2',cls:'',level:0,player:'',cr:'5',attacks:'Bite +7 (1d6+5). Claw +7 (2d6+5).',faction:'',str:18,dex:8,con:20,int:4,wiz:8,cha:4,plr:3},
+  {id:'m3',type:'Monster',name:'Shadow Wraith',color:'#b39ddb',ac:13,hp:45,maxHp:45,speed:40,initiative:3,pp:13,conditions:['Invisible'],notes:'Incorporeal. Radiant vulnerability.',location:'Ruins East',cls:'',level:0,player:'',cr:'4',attacks:'Withering Touch +5 (2d6+3 necrotic).',faction:'',str:6,dex:16,con:10,int:14,wiz:12,cha:14,plr:20},
+  {id:'m4',type:'Monster',name:'Goblin Scout',color:'#a5d6a7',ac:13,hp:7,maxHp:7,speed:30,initiative:2,pp:9,conditions:[],notes:'Nimble Escape. Has shortbow.',location:'Forest Path',cls:'',level:0,player:'',cr:'1/4',attacks:'Shortbow +4 (1d6+2). Scimitar +4.',faction:'',str:8,dex:14,con:10,int:10,wiz:8,cha:8,plr:5},
+  {id:'m5',type:'Monster',name:'Goblin Scout 2',color:'#80cbc4',ac:13,hp:7,maxHp:7,speed:30,initiative:1,pp:9,conditions:[],notes:'Paired with Scout 1.',location:'Forest Path',cls:'',level:0,player:'',cr:'1/4',attacks:'Shortbow +4 (1d6+2).',faction:'',str:8,dex:14,con:10,int:10,wiz:8,cha:8,plr:5},
+  {id:'n1',type:'NPC',name:'Elder Varos',color:'#ffb74d',ac:10,hp:18,maxHp:18,speed:25,initiative:0,pp:14,conditions:[],notes:'Village elder. Knows ruin secrets.',location:'Millhaven Village',cls:'',level:0,player:'',cr:'',attacks:'',faction:'Millhaven Council',str:8,dex:8,con:10,int:14,wiz:16,cha:12,plr:18},
+  {id:'n2',type:'NPC',name:'Mira the Fence',color:'#f06292',ac:12,hp:12,maxHp:12,speed:30,initiative:3,pp:12,conditions:[],notes:'Black market contact. Sells info.',location:'Docks District',cls:'',level:0,player:'',cr:'',attacks:'',faction:'Obsidian Ring',str:10,dex:16,con:12,int:14,wiz:12,cha:15,plr:7},
+  {id:'n3',type:'NPC',name:'Captain Aldren',color:'#4db6ac',ac:14,hp:35,maxHp:35,speed:30,initiative:2,pp:13,conditions:[],notes:'Guard captain. Can be bribed.',location:'City Gate',cls:'',level:0,player:'',cr:'',attacks:'',faction:'City Guard',str:14,dex:12,con:14,int:11,wiz:12,cha:13,plr:9}
+];
+
+// Sample maps — three in a hierarchy
+var SAMPLE_MAPS=[
+  {id:'map-world',name:'Ashveil Region',mapType:'region',parentMapId:null,image:null,notes:'The overworld region map.',tx:{x:0,y:0,scale:1}},
+  {id:'map-millhaven',name:'Millhaven',mapType:'town',parentMapId:'map-world',image:null,notes:'The main town.',tx:{x:0,y:0,scale:1}},
+  {id:'map-temple',name:'Temple of the Pale',mapType:'building',parentMapId:'map-millhaven',image:null,notes:'The main temple.',tx:{x:0,y:0,scale:1}},
+  {id:'map-crypt',name:'Temple Crypt',mapType:'dungeon',parentMapId:'map-temple',image:null,notes:'Hidden basement beneath the temple.',tx:{x:0,y:0,scale:1}}
+];
+
+var DEFAULT_STATS={str:10,dex:10,con:10,int:10,wiz:10,cha:10,plr:10};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MIGRATION HELPERS
+// ═══════════════════════════════════════════════════════════════════════════
+
+function migrateEntity(e){
+  var out=Object.assign({cls:'',level:1,player:'',cr:'',attacks:'',faction:'',conditions:[],notes:'',location:'',pp:10,initiative:0},DEFAULT_STATS,e);
+  CORE_STATS.forEach(function(k){out[k]=parseInt(out[k])||10;});
+  return out;
+}
+
+function migrateMap(m){
+  return Object.assign({id:uid(),name:'Unnamed Map',mapType:'other',parentMapId:null,image:null,notes:'',tx:{x:0,y:0,scale:1}},m);
+}
+
+// Pins now have: id, entityId, mapId, x, y, visible (bool: player-visible)
+function migratePin(p){
+  return Object.assign({id:uid(),entityId:'',mapId:'',x:0,y:0,visible:false},p);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// STORAGE
+// ═══════════════════════════════════════════════════════════════════════════
+
+function load(k,def){try{var v=localStorage.getItem(k);return v?JSON.parse(v):def;}catch(e){return def;}}
+function save(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+function uid(){return Math.random().toString(36).slice(2,9);}
+function hpColor(hp,max){return hp<=0?'#e74c3c':hp<max*.3?'#f39c12':'#27ae60';}
+function hpPct(hp,max){return max>0?Math.max(0,Math.min(100,(hp/max)*100)):0;}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════════════════
+
+var isDM=false; // set after login
+
+// Online sync config — loaded from localStorage, configured via sync panel
+var SYNC_BIN_ID=load('sync-bin-id',null);
+var SYNC_API_KEY=load('sync-api-key',null);
+
+var entities=load('dm-ents',SAMPLE_ENTITIES).map(migrateEntity);
+// maps: array of map objects. Each stores its own image and tx.
+var maps=load('dm-maps',SAMPLE_MAPS).map(migrateMap);
+// pins: mapId-scoped. Each pin has a `visible` flag for player visibility.
+var pins=load('dm-pins',[]).map(migratePin);
+// presets: pin-position snapshots
+var presets=load('dm-presets',[]);
+// Session view state
+var activeMapId=load('dm-active-map', maps[0]?maps[0].id:null);
+// forcedPlayerMapId: DM can push players to a specific map. null = no push.
+var forcedPlayerMapId=load('dm-pushed-map',null);
+// Player reads this to know which map to show. Updated by DM push.
+var playerMapId=forcedPlayerMapId||activeMapId;
+
+var selectedId=null;
+var selectedPinId=null;
+var showLabels=true;
+var showGrid=false;
+var searchTerm='';
+var filters={type:null,alive:null,map:null,vis:null};
+var initRolls={};
+var initTurn=0;
+
+// ─── PERSIST ─────────────────────────────────────────────────────────────────
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ONLINE SYNC — JSONBin.io
+// ═══════════════════════════════════════════════════════════════════════════
+// Architecture:
+//   DM writes one JSON payload to a JSONBin on every state change.
+//   Payload includes: pins, entities (player-safe), forcedPlayerMapId,
+//   map metadata, and — crucially — the base64 image of the currently
+//   pushed map embedded directly. Players fetch this bin every 2s.
+//   No separate image bins, no local key lookups, no image caches needed.
+//   The bin is private; players read it using the same Master Key (shared
+//   by the DM in the session URL as a read-key parameter).
+
+var syncTimer=null;
+
+// ── DM SIDE: build and push ───────────────────────────────────────────────────
+
+function buildSyncPayload(){
+  // Embed the image of the currently pushed map directly in the payload.
+  // This is the ONLY map image we send — just the one players are looking at.
+  var pushedMap=forcedPlayerMapId?getMap(forcedPlayerMapId):null;
+
+  var mapMeta=maps.map(function(m){
+    return {id:m.id,name:m.name,mapType:m.mapType,parentMapId:m.parentMapId,tx:m.tx,
+            // embed image only for the currently pushed map
+            image:(m.id===forcedPlayerMapId&&m.image)?m.image:null};
+  });
+
+  return {
+    v:3,
+    ts:Date.now(),
+    forcedPlayerMapId:forcedPlayerMapId,
+    pins:pins,
+    entities:entities.map(function(e){
+      return Object.assign({},e,{notes:e.type==='PC'?e.notes:''});
+    }),
+    mapMeta:mapMeta
+  };
+}
+
+// Debounced remote write — at most one PUT per second
+function remotePersist(){
+  if(!SYNC_BIN_ID||!SYNC_API_KEY||!isDM)return;
+  clearTimeout(syncTimer);
+  syncTimer=setTimeout(doRemoteWrite,1000);
+}
+
+function doRemoteWrite(){
+  var payload=buildSyncPayload();
+  updateSyncIndicator('ok');
+  fetch('https://api.jsonbin.io/v3/b/'+SYNC_BIN_ID,{
+    method:'PUT',
+    headers:{'Content-Type':'application/json','X-Master-Key':SYNC_API_KEY,'X-Bin-Versioning':'false'},
+    body:JSON.stringify(payload)
+  }).then(function(r){
+    if(r.ok){updateSyncIndicator('ok');}
+    else{console.warn('Sync push failed:',r.status);updateSyncIndicator('err');}
+  }).catch(function(e){console.warn('Sync push error:',e);updateSyncIndicator('err');});
+}
+
+// persist() — saves DM state locally AND triggers remote write
+function persist(){
+  if(isDM){
+    save('dm-ents',entities);
+    save('dm-pins',pins);
+    save('dm-maps',maps.map(function(m){return Object.assign({},m);}));
+    save('dm-presets',presets);
+    save('dm-active-map',activeMapId);
+    save('dm-pushed-map',forcedPlayerMapId);
+    remotePersist(); // write to remote bin
+  }
+}
+
+// ─── TOAST ───────────────────────────────────────────────────────────────────
+
+var toastTimer;
+function toast(msg){
+  var el=document.getElementById('toast');
+  el.textContent=msg;el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(function(){el.classList.remove('show');},2400);
+}
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+function getCurrentMapId(){return isDM ? activeMapId : (forcedPlayerMapId||activeMapId);}
+
+function pinsForMap(mapId){return pins.filter(function(p){return p.mapId===mapId;});}
+
+// Only pins player can see: visible flag must be true
+function visiblePinsForMap(mapId){
+  return pins.filter(function(p){return p.mapId===mapId && p.visible;});
+}
+
+// Entity IDs with any pin on the current map
+function entityIdsOnCurrentMap(){
+  return new Set(pinsForMap(getCurrentMapId()).map(function(p){return p.entityId;}));
+}
+
+function getMap(id){return maps.find(function(m){return m.id===id;});}
+
+function ancestorChain(mapId){
+  var chain=[];
+  var cur=getMap(mapId);
+  while(cur){chain.unshift(cur);cur=getMap(cur.parentMapId);}
+  return chain;
+}
+
+function childMaps(parentId){
+  return maps.filter(function(m){return m.parentMapId===parentId;});
+}
+
+// ─── VISIBILITY FILTER FOR PLAYER STATE ──────────────────────────────────────
+// This is the single authoritative player-safe filter.
+// Never pass DM-only data to player-rendered functions.
+
+function playerSafeEntities(){
+  // Players see entities that have at least one visible pin on the current player map
+  var mapId=forcedPlayerMapId||activeMapId;
+  var visIds=new Set(visiblePinsForMap(mapId).map(function(p){return p.entityId;}));
+  return entities.filter(function(e){return visIds.has(e.id);}).map(function(e){
+    // Strip secret notes from player view
+    return Object.assign({},e,{notes:''});
+  });
+}
+
+function playerSafePins(){
+  var mapId=forcedPlayerMapId||activeMapId;
+  return visiblePinsForMap(mapId);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// INITIATIVE
+// ═══════════════════════════════════════════════════════════════════════════
+
+function initEligible(){
+  var onMap=entityIdsOnCurrentMap();
+  return entities.filter(function(e){return (e.type==='PC'||e.type==='Monster')&&onMap.has(e.id);});
+}
+
+function getSortedInit(){
+  return initEligible().slice().sort(function(a,b){
+    var ra=initRolls[a.id]!==undefined?initRolls[a.id]:a.initiative;
+    var rb=initRolls[b.id]!==undefined?initRolls[b.id]:b.initiative;
+    if(rb!==ra)return rb-ra;
+    if(b.initiative!==a.initiative)return b.initiative-a.initiative;
+    return a.name.localeCompare(b.name);
+  });
+}
+
+function updateInitiative(id,val){
+  entities=entities.map(function(e){return e.id!==id?e:Object.assign({},e,{initiative:val});});
+  persist();
+  if(initRolls[id]!==undefined)initRolls[id]=val;
+  renderSidebar();
+  renderInitiative();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MAP MANAGEMENT
+// ═══════════════════════════════════════════════════════════════════════════
+
+function switchMap(mapId){
+  activeMapId=mapId;
+  persist();
+  renderMapView();
+  renderMapManager();
+  renderBreadcrumb();
+  renderSidebar();
+  renderInitiative();
+}
+
+function createMap(name,mapType,parentId){
+  var m={id:uid(),name:name||'New Map',mapType:mapType||'other',parentMapId:parentId||null,image:null,notes:'',tx:{x:0,y:0,scale:1}};
+  maps=[...maps,m];
+  persist();
+  return m;
+}
+
+function deleteMap(mapId){
+  // Reassign children to parent of deleted map
+  var m=getMap(mapId);
+  if(!m)return;
+  maps=maps.map(function(x){
+    if(x.parentMapId===mapId)return Object.assign({},x,{parentMapId:m.parentMapId});
+    return x;
+  });
+  maps=maps.filter(function(x){return x.id!==mapId;});
+  // Remove pins on this map
+  pins=pins.filter(function(p){return p.mapId!==mapId;});
+  if(activeMapId===mapId)activeMapId=maps[0]?maps[0].id:null;
+  if(forcedPlayerMapId===mapId)forcedPlayerMapId=null;
+  persist();
+  renderMapManager();
+  renderMapView();
+  renderBreadcrumb();
+}
+
+function saveMapImage(mapId,dataUrl){
+  maps=maps.map(function(m){return m.id===mapId?Object.assign({},m,{image:dataUrl}):m;});
+  persist();
+}
+
+function saveMapTx(mapId,newTx){
+  maps=maps.map(function(m){return m.id===mapId?Object.assign({},m,{tx:newTx}):m;});
+  persist();
+}
+
+// ─── MAP VIEW RENDER ──────────────────────────────────────────────────────────
+
+function renderMapView(){
+  var mapId=getCurrentMapId();
+  var m=getMap(mapId);
+  var img=document.getElementById('map-img');
+  var placeholder=document.getElementById('map-placeholder');
+  var playerWaiting=document.getElementById('player-waiting');
+
+  if(!isDM){
+    // Player mode
+    if(!forcedPlayerMapId){
+      // No push active — show waiting screen
+      img.style.display='none';
+      placeholder.style.display='none';
+      playerWaiting.classList.add('show');
+      document.getElementById('player-push-banner').classList.remove('show');
+      renderPins();
+      return;
+    } else {
+      playerWaiting.classList.remove('show');
+      document.getElementById('player-push-banner').classList.add('show');
+    }
+  } else {
+    playerWaiting.classList.remove('show');
+    document.getElementById('player-push-banner').classList.remove('show');
+  }
+
+  if(m&&m.image){
+    img.src=m.image;
+    img.style.display='block';
+    placeholder.style.display='none';
+  } else {
+    img.style.display='none';
+    placeholder.style.display='flex';
+    document.getElementById('ph-sub-text').textContent=
+      isDM ? 'Upload a map image to get started' : 'No map image for this location';
+  }
+
+  // Apply stored transform for this map
+  var storedTx=(m&&m.tx)?m.tx:{x:0,y:0,scale:1};
+  currentTx=Object.assign({},storedTx);
+  applyTransform();
+  renderPins();
+}
+
+// ─── BREADCRUMB ───────────────────────────────────────────────────────────────
+
+function renderBreadcrumb(){
+  var mapId=getCurrentMapId();
+  var chain=ancestorChain(mapId);
+  var m=getMap(mapId);
+  var bc=document.getElementById('map-breadcrumb');
+  var typeBadge=document.getElementById('map-type-badge');
+  bc.innerHTML=chain.map(function(x,i){
+    var isCurrent=i===chain.length-1;
+    return '<span class="map-bc-item'+(isCurrent?' current':'')+'" data-mid="'+x.id+'">'+esc(x.name)+'</span>'+
+      (isCurrent?'':'<span class="map-bc-sep">&#9654;</span>');
+  }).join('');
+  typeBadge.textContent=m?m.mapType:'';
+  bc.querySelectorAll('.map-bc-item').forEach(function(el){
+    el.addEventListener('click',function(){switchMap(el.dataset.mid);});
+  });
+}
+
+// ─── MAP MANAGER PANEL ────────────────────────────────────────────────────────
+
+function renderMapManager(){
+  var list=document.getElementById('mm-list');
+  // Render tree: top-level maps, then children indented
+  function renderLevel(parentId,indent){
+    var children=maps.filter(function(m){return m.parentMapId===parentId;});
+    return children.map(function(m){
+      var isActive=m.id===activeMapId;
+      var isPushed=m.id===forcedPlayerMapId;
+      var subChildren=maps.filter(function(x){return x.parentMapId===m.id;});
+      return '<div class="mm-row'+(isActive?' active-map':'')+(isPushed?' pushed-map':'')+(indent?' mm-indent':'')+'" data-mid="'+m.id+'">'+
+        '<span class="mm-name">'+esc(m.name)+'</span>'+
+        '<span class="mm-type">'+esc(m.mapType)+'</span>'+
+        '<div class="mm-actions">'+
+        '<button class="btn sm mm-edit-btn" data-mid="'+m.id+'">&#9998;</button>'+
+        '<button class="btn sm red mm-del-btn" data-mid="'+m.id+'">&#10005;</button>'+
+        '</div>'+
+        '</div>'+
+        renderLevel(m.id,true);
+    }).join('');
+  }
+  list.innerHTML=renderLevel(null,false)||'<div class="empty-msg" style="padding:12px">No maps yet</div>';
+  list.querySelectorAll('.mm-row').forEach(function(row){
+    row.addEventListener('click',function(e){
+      if(e.target.closest('.mm-actions'))return;
+      switchMap(row.dataset.mid);
+    });
+  });
+  list.querySelectorAll('.mm-edit-btn').forEach(function(btn){
+    btn.addEventListener('click',function(e){e.stopPropagation();openMapModal(getMap(btn.dataset.mid));});
+  });
+  list.querySelectorAll('.mm-del-btn').forEach(function(btn){
+    btn.addEventListener('click',function(e){e.stopPropagation();
+      if(confirm('Delete map "'+getMap(btn.dataset.mid).name+'"? Pins on it will be removed.'))deleteMap(btn.dataset.mid);
+    });
+  });
+}
+
+// ─── MAP MODAL ────────────────────────────────────────────────────────────────
+
+function openMapModal(existingMap){
+  var isNew=!existingMap;
+  var m=existingMap||{id:uid(),name:'',mapType:'other',parentMapId:null,image:null,notes:'',tx:{x:0,y:0,scale:1}};
+  var overlay=document.getElementById('modal-overlay');
+  overlay.style.display='flex';
+  var parentOptions=maps.filter(function(x){return x.id!==m.id;}).map(function(x){
+    return '<option value="'+x.id+'"'+(m.parentMapId===x.id?' selected':'')+'>'+esc(x.name)+'</option>';
+  }).join('');
+  var typeOptions=MAP_TYPES.map(function(t){return '<option value="'+t+'"'+(m.mapType===t?' selected':'')+'>'+t+'</option>';}).join('');
+  overlay.innerHTML='<div class="modal">'+
+    '<div class="modal-hd"><span class="modal-ttl">'+(isNew?'New Map':'Edit Map: '+esc(m.name))+'</span><button class="btn sm" id="modal-close">X</button></div>'+
+    '<div class="modal-body">'+
+    '<div class="fgrid">'+
+    '<div class="fg ffull"><label class="lbl">Map Name *</label><input id="mf-name" value="'+esc(m.name)+'" placeholder="e.g. Temple Interior" autofocus></div>'+
+    '<div class="fg"><label class="lbl">Type</label><select id="mf-type">'+typeOptions+'</select></div>'+
+    '<div class="fg"><label class="lbl">Parent Map</label><select id="mf-parent"><option value="">— None (top level) —</option>'+parentOptions+'</select></div>'+
+    '</div>'+
+    '<div class="sec">Map Image</div>'+
+    '<label class="btn gold" style="cursor:pointer;display:inline-flex;gap:6px">Upload / Replace Image<input type="file" accept="image/*" id="mf-img-upload" style="display:none"></label>'+
+    (m.image?'<div style="margin-top:8px;font-size:11px;color:var(--greenB)">Image loaded ✓</div>':'<div style="margin-top:8px;font-size:11px;color:var(--t3)">No image uploaded yet</div>')+
+    '<div class="sec">Notes</div>'+
+    '<div class="fg ffull"><textarea id="mf-notes" style="width:100%">'+esc(m.notes)+'</textarea></div>'+
+    '</div>'+
+    '<div class="modal-ft"><button class="btn" id="mf-cancel">Cancel</button><button class="btn gold" id="mf-save">Save Map</button></div>'+
+    '</div>';
+  var newImage=null;
+  document.getElementById('mf-img-upload').addEventListener('change',function(){
+    var file=this.files[0];if(!file)return;
+    var r=new FileReader();r.onload=function(ev){newImage=ev.target.result;toast('Image ready — save map to apply');};r.readAsDataURL(file);
+  });
+  function closeModal(){overlay.style.display='none';overlay.innerHTML='';}
+  overlay.addEventListener('click',function(ev){if(ev.target===overlay)closeModal();});
+  document.getElementById('modal-close').addEventListener('click',closeModal);
+  document.getElementById('mf-cancel').addEventListener('click',closeModal);
+  document.getElementById('mf-save').addEventListener('click',function(){
+    var name=document.getElementById('mf-name').value.trim();
+    if(!name){document.getElementById('mf-name').focus();return;}
+    var updated=Object.assign({},m,{
+      name:name,
+      mapType:document.getElementById('mf-type').value,
+      parentMapId:document.getElementById('mf-parent').value||null,
+      notes:document.getElementById('mf-notes').value,
+      image:newImage!==null?newImage:m.image
+    });
+    if(isNew)maps=[...maps,updated];
+    else maps=maps.map(function(x){return x.id===updated.id?updated:x;});
+    persist();renderMapManager();renderBreadcrumb();renderMapView();closeModal();
+    toast(isNew?'Map created: '+name:'Map updated: '+name);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PIN VISIBILITY TOGGLE
+// ═══════════════════════════════════════════════════════════════════════════
+
+function togglePinVisibility(pinId){
+  pins=pins.map(function(p){return p.id===pinId?Object.assign({},p,{visible:!p.visible}):p;});
+  persist();renderPins();renderSidebar();
+}
+
+function setPinVisible(pinId,v){
+  pins=pins.map(function(p){return p.id===pinId?Object.assign({},p,{visible:v}):p;});
+  persist();renderPins();renderSidebar();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// DM PUSH SYSTEM
+// ═══════════════════════════════════════════════════════════════════════════
+
+function pushMapToPlayers(mapId){
+  forcedPlayerMapId=mapId||activeMapId;
+  var m=getMap(forcedPlayerMapId);
+  document.getElementById('push-status-name').textContent=m?m.name:'Unknown';
+  document.getElementById('push-status').classList.add('show');
+  renderMapManager();
+  persist(); // writes to localStorage AND triggers remote bin update
+  toast('Pushed to players: '+(m?m.name:''));
+}
+
+function releasePush(){
+  forcedPlayerMapId=null;
+  document.getElementById('push-status').classList.remove('show');
+  renderMapManager();
+  persist(); // clears forcedPlayerMapId in remote bin too
+  toast('Player view released');
+}
+
+// ─── PLAYER POLLING ──────────────────────────────────────────────────────────
+
+var lastSyncTs=0;
+
+// ── PLAYER: fetch latest state from remote bin and apply it ──────────────────
+function syncFromRemote(){
+  if(!SYNC_BIN_ID){syncFromStorage();return;}
+  var headers={'X-Bin-Meta':'false'};
+  if(SYNC_API_KEY)headers['X-Master-Key']=SYNC_API_KEY;
+  fetch('https://api.jsonbin.io/v3/b/'+SYNC_BIN_ID+'/latest',{headers:headers,cache:'no-store'})
+    .then(function(r){
+      if(!r.ok){
+        updateSyncIndicator('err');
+        var st=document.getElementById('pw-sync-status');
+        if(r.status===401||r.status===403){
+          if(st)st.textContent='Access denied ('+r.status+'). DM needs to share the updated link (use Sync → copy URL again).';
+        } else {
+          if(st)st.textContent='Fetch error HTTP '+r.status+'. Check bin ID.';
+        }
+        console.warn('Remote fetch failed:',r.status);
+        return null;
+      }
+      updateSyncIndicator('ok');
+      var st=document.getElementById('pw-sync-status');
+      if(st)st.textContent='Connected ✓ Last fetch: '+new Date().toLocaleTimeString();
+      return r.json();
+    })
+    .then(function(data){
+      if(!data)return;
+      var payload=data.record||data;
+      if(!payload||!payload.v){
+        // Show a helpful message if bin is empty or wrong format
+        var st=document.getElementById('pw-sync-status');
+        if(st)st.textContent='Bin connected but no game data yet. DM needs to push.';
+        return;
+      }
+      // Accept both v2 (old format) and v3 (new format with embedded image)
+      applyPayload(payload);
+    })
+    .catch(function(e){
+      console.warn('Sync fetch error:',e);
+      updateSyncIndicator('err');
+      var st=document.getElementById('pw-sync-status');
+      if(st)st.textContent='Fetch error: '+e.message+'. Check bin ID/key in URL.';
+    });
+}
+
+// Apply a payload (v2 or v3) — update in-memory state and re-render
+function applyPayload(payload){
+  try{
+    if(payload.entities)entities=payload.entities.map(migrateEntity);
+    if(payload.pins)pins=payload.pins.map(migratePin);
+    forcedPlayerMapId=payload.forcedPlayerMapId||null;
+
+    // Rebuild maps from mapMeta; use embedded image if present (v3), else keep existing
+    if(payload.mapMeta&&payload.mapMeta.length){
+      payload.mapMeta.forEach(function(meta){
+        var existing=maps.find(function(m){return m.id===meta.id;});
+        var img=meta.image||(existing?existing.image:null)||null;
+        var merged=migrateMap(Object.assign({},existing||{},meta,{image:img}));
+        if(existing){maps=maps.map(function(m){return m.id===meta.id?merged:m;});}
+        else{maps.push(merged);}
+      });
+    }
+    playerRenderAll();
+  }catch(err){console.warn('applyPayload error:',err);}
+}
+
+// Local same-device fallback
+function syncFromStorage(){
+  try{
+    var pushed;
+    try{pushed=JSON.parse(localStorage.getItem('dm-pushed-map'));}catch(e){pushed=null;}
+    try{entities=JSON.parse(localStorage.getItem('dm-ents')||'[]').map(migrateEntity);}catch(e){}
+    try{pins=JSON.parse(localStorage.getItem('dm-pins')||'[]').map(migratePin);}catch(e){}
+    try{maps=JSON.parse(localStorage.getItem('dm-maps')||'[]').map(migrateMap);}catch(e){}
+    forcedPlayerMapId=pushed;
+    playerRenderAll();
+  }catch(err){console.warn('syncFromStorage error:',err);}
+}
+
+function startPlayerPolling(){
+  if(SYNC_BIN_ID){
+    // Fetch immediately, then every 2s
+    syncFromRemote();
+    setInterval(syncFromRemote,2000);
+  } else {
+    // Local fallback for same-device testing
+    window.addEventListener('storage',function(ev){
+      if(['dm-pins','dm-ents','dm-pushed-map','dm-maps'].indexOf(ev.key)!==-1)
+        syncFromStorage();
+    });
+    syncFromStorage();
+    setInterval(syncFromStorage,1000);
+  }
+}
+// playerRenderAll: the single function that draws everything the player sees.
+// Never called on DM side. Keeps player rendering completely separate.
+function playerRenderAll(){
+  var mapId=forcedPlayerMapId;
+  var m=mapId?getMap(mapId):null;
+  var img=document.getElementById('map-img');
+  var wrapper=document.getElementById('map-wrapper');
+  var placeholder=document.getElementById('map-placeholder');
+  var waiting=document.getElementById('player-waiting');
+  var banner=document.getElementById('player-push-banner');
+  var cardPanel=document.getElementById('player-card-panel');
+
+  if(!mapId){
+    // No push — show waiting screen
+    img.style.display='none';
+    placeholder.style.display='none';
+    waiting.style.display='flex';
+    banner.style.display='none';
+    if(cardPanel)cardPanel.style.display='none';
+    // Clear any pins
+    wrapper.querySelectorAll('.pin').forEach(function(p){p.remove();});
+    return;
+  }
+
+  // Push is active — hide waiting screen
+  waiting.style.display='none';
+  banner.style.display='flex';
+
+  // Show map image or placeholder (pins render either way)
+  if(m&&m.image){
+    img.src=m.image;
+    img.style.display='block';
+    placeholder.style.display='none';
+    var t=m.tx||{x:0,y:0,scale:1};
+    currentTx=Object.assign({},t);
+    applyTransform();
+  } else {
+    img.style.display='none';
+    placeholder.style.display='flex';
+    document.getElementById('ph-sub-text').textContent='Map image loading…';
+    // Ensure wrapper has enough size so pins are visible even without image
+    wrapper.style.minWidth='100%';
+    wrapper.style.minHeight='100%';
+    currentTx={x:0,y:0,scale:1};
+    applyTransform();
+  }
+
+  // Render visible pins regardless of image
+  wrapper.querySelectorAll('.pin').forEach(function(p){p.remove();});
+  var entMap={};
+  entities.forEach(function(e){entMap[e.id]=e;});
+  // All visible pins: PC pins always shown, monsters/NPCs shown when visible:true
+  var visiblePins=pins.filter(function(p){
+    if(p.mapId!==mapId)return false;
+    var ent=entMap[p.entityId];
+    if(!ent)return false;
+    if(ent.type==='PC')return true; // PC pins always visible to all players
+    return p.visible;               // others only if revealed by DM
+  });
+  visiblePins.forEach(function(pin){
+    var e=entMap[pin.entityId];
+    if(!e)return;
+    var isMyPin=e.type==='PC'&&e.id===myPCId;
+    var isPC=e.type==='PC';
+    var div=document.createElement('div');
+    // My pin: gold glow. Other PC pins: normal. NPC/Monster: no-drag
+    div.className='pin'+(isMyPin?' my-pc':isPC?'':' no-drag');
+    div.style.left=pin.x+'px';
+    div.style.top=pin.y+'px';
+    div.innerHTML=pinSVG(e.color,e.type,isMyPin)+
+      (showLabels?'<div class="pin-lbl">'+esc(e.name)+'</div>':'')+
+      '<div class="pin-tip"><div class="tip-name">'+esc(e.name)+'</div>'+
+      '<div class="tip-stats">HP: '+e.hp+'/'+e.maxHp+' | AC: '+e.ac+'</div>'+
+      (e.conditions.length?'<div class="tip-stats" style="margin-top:2px">'+e.conditions.slice(0,3).join(', ')+'</div>':'')+
+      '</div>';
+    // Only owner can drag their own PC pin
+    if(isMyPin){
+      (function(pin){
+        div.addEventListener('mousedown',function(ev){
+          if(ev.button!==0)return;
+          ev.preventDefault();ev.stopPropagation();
+          startPinDrag(ev,pin.id);
+        });
+      })(pin);
+    }
+    wrapper.appendChild(div);
+  });
+
+  // Player card panel: PCs always + revealed NPCs/Monsters
+  renderPlayerCards(mapId);
+}
+
+function renderPlayerCards(mapId){
+  var panel=document.getElementById('player-card-panel');
+  var list=document.getElementById('player-card-list');
+  var countEl=document.getElementById('player-card-count');
+  if(!panel||!list)return;
+
+  var visIds=new Set(pins.filter(function(p){return p.mapId===mapId&&p.visible;}).map(function(p){return p.entityId;}));
+  var shown=entities.filter(function(e){
+    if(e.type==='PC')return true;
+    return visIds.has(e.id);
+  });
+
+  if(!shown.length){panel.style.display='none';return;}
+  panel.style.display='flex';
+  if(countEl)countEl.textContent=shown.length+' visible';
+
+  list.innerHTML=shown.map(function(e){
+    var hpC=hpColor(e.hp,e.maxHp);
+    var pct=hpPct(e.hp,e.maxHp);
+    var isMine=e.id===myPCId;
+    return '<div style="background:var(--bg3);border:1px solid '+(isMine?'var(--gold)':'var(--bd)')+
+      ';border-radius:var(--r);padding:7px 10px;min-width:140px;max-width:180px;flex:1">'+
+      '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">'+
+      '<div style="width:9px;height:9px;border-radius:50%;background:'+e.color+';flex-shrink:0"></div>'+
+      '<span style="font-family:Cinzel,serif;font-size:11px;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(e.name)+'</span>'+
+      (isMine?'<span style="font-size:9px;color:var(--gold);font-family:JetBrains Mono,monospace">YOU</span>':'')+
+      '</div>'+
+      '<div style="height:2px;background:var(--bd);border-radius:1px;margin-bottom:5px">'+
+      '<div style="width:'+pct+'%;height:100%;background:'+hpC+'"></div></div>'+
+      '<div style="display:flex;gap:8px;font-family:JetBrains Mono,monospace;font-size:10px;color:var(--t2)">'+
+      '<span>HP '+e.hp+'/'+e.maxHp+'</span><span>AC '+e.ac+'</span></div>'+
+      (e.conditions.length?'<div style="margin-top:4px;font-size:9px;color:var(--t3)">'+e.conditions.slice(0,3).join(', ')+'</div>':'')+
+      '</div>';
+  }).join('');
+}
+
+function startPlayerPolling(){
+  if(SYNC_BIN_ID){
+    // Online mode: poll remote API every 2 seconds
+    syncFromRemote(); // immediate first fetch
+    setInterval(syncFromRemote, 2000);
+  } else {
+    // Offline/local fallback: same-device localStorage sync
+    window.addEventListener('storage',function(ev){
+      var dmKeys=['dm-pins','dm-ents','dm-pushed-map','dm-maps'];
+      if(dmKeys.indexOf(ev.key)!==-1) syncFromStorage();
+    });
+    setInterval(syncFromStorage, 1000);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SIDEBAR
+// ═══════════════════════════════════════════════════════════════════════════
+
+function filteredEntities(){
+  var onMap=entityIdsOnCurrentMap();
+  return entities.filter(function(e){
+    if(searchTerm&&!e.name.toLowerCase().includes(searchTerm.toLowerCase()))return false;
+    if(filters.type&&e.type!==filters.type)return false;
+    if(filters.alive==='alive'&&e.conditions.includes('Dead'))return false;
+    if(filters.alive==='dead'&&!e.conditions.includes('Dead'))return false;
+    if(filters.map==='onmap'&&!onMap.has(e.id))return false;
+    if(filters.vis==='hidden'){
+      // Show only entities whose pins on this map are DM-hidden
+      var ePins=pinsForMap(getCurrentMapId()).filter(function(p){return p.entityId===e.id;});
+      if(!ePins.length||ePins.some(function(p){return p.visible;}))return false;
+    }
+    return true;
+  });
+}
+
+function renderSidebar(){
+  var list=document.getElementById('entity-list');
+  var onMap=entityIdsOnCurrentMap();
+  var shown=filteredEntities();
+  if(!shown.length){list.innerHTML='<div class="empty-msg">No entities found</div>';}
+  else{list.innerHTML=shown.map(function(e){
+    // Determine if entity has a hidden pin on current map
+    var ePins=pinsForMap(getCurrentMapId()).filter(function(p){return p.entityId===e.id;});
+    var isHidden=ePins.length>0&&ePins.every(function(p){return !p.visible;});
+    var firstPin=ePins[0]||null;
+    return cardHTML(e,onMap.has(e.id),isHidden,firstPin?firstPin.id:null);
+  }).join('');}
+  document.getElementById('sb-footer').textContent=shown.length+' of '+entities.length+' | '+pins.length+' pins total';
+
+  list.querySelectorAll('.ecard').forEach(function(card){
+    var id=card.dataset.id;
+    card.addEventListener('click',function(e){if(e.target.closest('.cexp'))return;selectEntity(id);});
+    card.setAttribute('draggable','true');
+    card.addEventListener('dragstart',function(e){e.dataTransfer.setData('entityId',id);e.dataTransfer.effectAllowed='copy';});
+    var tog=card.querySelector('.tog');
+    if(tog)tog.addEventListener('click',function(e){e.stopPropagation();card.classList.toggle('expanded');});
+    var hpa=card.querySelector('.hp-apply');
+    if(hpa){
+      hpa.addEventListener('click',function(e){e.stopPropagation();applyHpDelta(id,card,-1);});
+      card.querySelector('.hp-heal').addEventListener('click',function(e){e.stopPropagation();applyHpDelta(id,card,1);});
+      card.querySelector('.hp-set').addEventListener('keydown',function(e){if(e.key==='Enter')applyHpDelta(id,card,-1);});
+    }
+    var initInput=card.querySelector('.card-init-edit');
+    if(initInput){
+      initInput.addEventListener('click',function(e){e.stopPropagation();});
+      initInput.addEventListener('change',function(e){e.stopPropagation();var val=parseInt(this.value);if(!isNaN(val))updateInitiative(id,val);});
+    }
+    card.querySelectorAll('.cpill').forEach(function(pill){
+      pill.addEventListener('click',function(e){e.stopPropagation();toggleCondition(id,pill.dataset.cond);});
+    });
+    var eb=card.querySelector('.edit-btn');
+    if(eb)eb.addEventListener('click',function(e){e.stopPropagation();openEntityModal(entities.find(function(x){return x.id===id;}));});
+    var db=card.querySelector('.del-btn');
+    if(db)db.addEventListener('click',function(e){e.stopPropagation();deleteEntity(id);});
+    // Visibility toggle button
+    var vb=card.querySelector('.vis-toggle-btn');
+    if(vb){
+      vb.addEventListener('click',function(e){
+        e.stopPropagation();
+        var pinId=vb.dataset.pinId;
+        if(pinId)togglePinVisibility(pinId);
+      });
+    }
+  });
+}
+
+function cardHTML(e,onMap,isHidden,pinId){
+  var dead=e.conditions.includes('Dead');
+  var sel=selectedId===e.id;
+  var cls='ecard'+(sel?' sel':'')+(dead?' dead':'')+(onMap?' onmap':'')+(isHidden?' dm-hidden-card':'');
+  var hpC=hpColor(e.hp,e.maxHp);
+  var pct=hpPct(e.hp,e.maxHp);
+  var condBadges=e.conditions.map(function(c){var col=COND_COLORS[c]||'#888';return '<span class="cond" style="background:'+col+'33;color:'+col+';border:1px solid '+col+'55">'+esc(c)+'</span>';}).join('');
+  var condPills=CONDITIONS.map(function(c){return '<span class="cpill'+(e.conditions.includes(c)?' on':'')+'" data-cond="'+esc(c)+'">'+esc(c)+'</span>';}).join('');
+  var extra='';
+  if(e.type==='PC')extra='<div class="st"><div class="stv">'+esc(e.cls||'-')+'</div><div class="stl">Class</div></div>';
+  else if(e.type==='Monster')extra='<div class="st"><div class="stv">'+esc(e.cr||'-')+'</div><div class="stl">CR</div></div>';
+  var coreRow=CORE_STATS.map(function(k){return '<div class="cs" title="'+CORE_TITLES[k]+'"><div class="csv">'+e[k]+'</div><div class="csl">'+CORE_LABELS[k]+'</div></div>';}).join('');
+  // Visibility badge and toggle button (DM only, only shown when entity is on current map)
+  var visBadge='';
+  var visToggle='';
+  if(onMap&&pinId){
+    if(isHidden){
+      visBadge='<span class="vis-badge vis-hidden">Hidden</span>';
+      visToggle='<button class="btn sm green vis-toggle-btn" data-pin-id="'+pinId+'" title="Reveal to players" style="font-size:10px">Reveal</button>';
+    } else {
+      visBadge='<span class="vis-badge vis-shown">Visible</span>';
+      visToggle='<button class="btn sm vis-toggle-btn" data-pin-id="'+pinId+'" title="Hide from players" style="font-size:10px;border-color:#3d1f5a;color:var(--purpleB)">Hide</button>';
+    }
+  }
+  return '<div class="'+cls+'" data-id="'+e.id+'">'+
+    '<div class="ecard-head">'+
+    '<div class="dot" style="background:'+e.color+'"></div>'+
+    '<span class="card-name">'+esc(e.name)+'</span>'+
+    (visBadge?visBadge:'')+
+    '<span class="badge badge-'+e.type+'">'+e.type+'</span>'+
+    '<button class="btn sm tog" style="padding:2px 6px;margin-left:auto">v</button>'+
+    '</div>'+
+    '<div class="hpbar"><div class="hpfill" style="width:'+pct+'%;background:'+hpC+'"></div></div>'+
+    '<div class="cstats">'+
+    '<div class="st"><div class="stv" style="color:'+hpC+'">'+e.hp+'/'+e.maxHp+'</div><div class="stl">HP</div></div>'+
+    '<div class="st"><div class="stv">'+e.ac+'</div><div class="stl">AC</div></div>'+
+    '<div class="st"><div class="stv">'+e.pp+'</div><div class="stl">PP</div></div>'+
+    extra+
+    '</div>'+
+    (condBadges?'<div class="cconds">'+condBadges+'</div>':'')+
+    (e.location?'<div class="cloc">'+esc(e.location)+'</div>':'')+
+    '<div class="cexp">'+
+    '<div class="hp-row"><input class="hp-set" type="number" placeholder="HP" style="width:52px"><button class="btn sm red hp-apply">Dmg</button><button class="btn sm blue hp-heal">Heal</button></div>'+
+    '<div class="init-edit-row"><label>Initiative bonus:</label><input class="card-init-edit" type="number" value="'+e.initiative+'" style="width:48px;text-align:center"></div>'+
+    '<div style="font-size:10px;color:var(--t3);margin-bottom:4px">CORE STATS</div>'+
+    '<div class="core-stats">'+coreRow+'</div>'+
+    '<div style="font-size:10px;color:var(--t3);margin-bottom:3px">CONDITIONS</div>'+
+    '<div class="cond-pills">'+condPills+'</div>'+
+    (e.notes?'<div class="cnotes">'+esc(e.notes)+'</div>':'')+
+    (e.type==='Monster'&&e.attacks?'<div class="cattacks"><strong>Attacks:</strong> '+esc(e.attacks)+'</div>':'')+
+    (e.type==='NPC'&&e.faction?'<div class="cattacks">Faction: '+esc(e.faction)+'</div>':'')+
+    '<div class="cacts"><button class="btn sm edit-btn">Edit</button><button class="btn sm red del-btn">Delete</button>'+(visToggle||'')+'</div>'+
+    '</div>'+
+    '</div>';
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ENTITY MUTATIONS
+// ═══════════════════════════════════════════════════════════════════════════
+
+function applyHpDelta(id,card,sign){
+  var input=card.querySelector('.hp-set');
+  var delta=Math.abs(parseInt(input.value)||0);
+  if(!delta)return;
+  entities=entities.map(function(e){return e.id!==id?e:Object.assign({},e,{hp:Math.max(0,e.hp+sign*delta)});});
+  input.value='';persist();renderSidebar();renderPins();
+}
+
+function toggleCondition(id,cond){
+  entities=entities.map(function(e){
+    if(e.id!==id)return e;
+    var has=e.conditions.includes(cond);
+    return Object.assign({},e,{conditions:has?e.conditions.filter(function(c){return c!==cond;}):[...e.conditions,cond]});
+  });
+  persist();renderSidebar();renderPins();
+}
+
+function deleteEntity(id){
+  entities=entities.filter(function(e){return e.id!==id;});
+  pins=pins.filter(function(p){return p.entityId!==id;});
+  if(selectedId===id)selectedId=null;
+  persist();renderAll();toast('Entity deleted');
+}
+
+function selectEntity(id){
+  selectedId=selectedId===id?null:id;
+  var pin=pinsForMap(getCurrentMapId()).find(function(p){return p.entityId===id;});
+  selectedPinId=pin?pin.id:null;
+  renderSidebar();renderPins();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MAP TRANSFORM (per-map stored tx)
+// ═══════════════════════════════════════════════════════════════════════════
+
+var currentTx={x:0,y:0,scale:1};
+
+function applyTransform(){
+  var w=document.getElementById('map-wrapper');
+  w.style.transform='translate('+currentTx.x+'px,'+currentTx.y+'px) scale('+currentTx.scale+')';
+}
+
+function saveTx(){
+  saveMapTx(getCurrentMapId(),{x:currentTx.x,y:currentTx.y,scale:currentTx.scale});
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PINS RENDER
+// ═══════════════════════════════════════════════════════════════════════════
+
+function pinSVG(color,type,sel){
+  var sw=sel?'stroke="white" stroke-width="2.5"':'stroke="rgba(0,0,0,.6)" stroke-width="1.5"';
+  var lbl=type==='PC'?'P':type==='Monster'?'M':'N';
+  var ty=type==='Monster'?'17':type==='PC'?'19':'18';
+  var shape;
+  if(type==='PC')shape='<circle cx="16" cy="14" r="11" fill="'+color+'" '+sw+'/>';
+  else if(type==='Monster')shape='<polygon points="16,3 27,14 16,25 5,14" fill="'+color+'" '+sw+'/>';
+  else shape='<rect x="5" y="3" width="22" height="22" rx="3" fill="'+color+'" '+sw+'/>';
+  return '<svg width="32" height="40" viewBox="0 0 32 40">'+shape+
+    '<line x1="16" y1="25" x2="16" y2="38" stroke="'+color+'" stroke-width="2"/>'+
+    '<circle cx="16" cy="38" r="2" fill="'+color+'"/>'+
+    '<text x="16" y="'+ty+'" text-anchor="middle" fill="rgba(0,0,0,.75)" font-size="12" font-family="Cinzel,serif" font-weight="700">'+lbl+'</text>'+
+    '</svg>';
+}
+
+function renderPins(){
+  var wrapper=document.getElementById('map-wrapper');
+  wrapper.querySelectorAll('.pin').forEach(function(p){p.remove();});
+  var entMap={};
+  entities.forEach(function(e){entMap[e.id]=e;});
+  var mapId=getCurrentMapId();
+  // DM sees all pins; players see only visible ones
+  var visibleSet=isDM ? pinsForMap(mapId) : visiblePinsForMap(mapId);
+  visibleSet.forEach(function(pin){
+    var e=entMap[pin.entityId];
+    if(!e)return;
+    var isHidden=!pin.visible; // DM-only
+    var div=document.createElement('div');
+    div.className='pin'+(selectedPinId===pin.id?' sel':'')+(isDM&&isHidden?' dm-hidden':'');
+    div.dataset.pinId=pin.id;
+    div.style.left=pin.x+'px';
+    div.style.top=pin.y+'px';
+    div.innerHTML=pinSVG(e.color,e.type,selectedPinId===pin.id)+
+      (isDM&&isHidden?'<div class="pin-hidden-badge">H</div>':'')+
+      (showLabels?'<div class="pin-lbl">'+esc(e.name)+'</div>':'')+
+      '<div class="pin-tip"><div class="tip-name">'+esc(e.name)+'</div>'+
+      '<div class="tip-stats">HP: '+e.hp+'/'+e.maxHp+' | AC: '+e.ac+'</div>'+
+      (e.conditions.length?'<div class="tip-stats" style="margin-top:2px">'+e.conditions.slice(0,3).join(', ')+'</div>':'')+
+      (isDM&&isHidden?'<div class="tip-stats" style="margin-top:3px;color:var(--purpleB)">&#128065; DM Only</div>':'')+
+      '</div>';
+    (function(pin,e){
+      div.addEventListener('mousedown',function(ev){
+        if(ev.button!==0||!isDM)return;
+        ev.preventDefault();ev.stopPropagation();
+        selectedPinId=pin.id;selectedId=e.id;
+        renderSidebar();renderPins();
+        startPinDrag(ev,pin.id);
+      });
+      div.addEventListener('contextmenu',function(ev){
+        if(!isDM)return;
+        ev.preventDefault();ev.stopPropagation();
+        pins=pins.filter(function(p){return p.id!==pin.id;});
+        if(selectedPinId===pin.id)selectedPinId=null;
+        persist();renderPins();renderSidebar();renderInitiative();toast('Pin removed');
+      });
+      // Double-click on DM pin: toggle visibility
+      div.addEventListener('dblclick',function(ev){
+        if(!isDM)return;
+        ev.stopPropagation();
+        togglePinVisibility(pin.id);
+        toast(pin.visible?'Pin hidden from players':'Pin revealed to players');
+      });
+    })(pin,e);
+    wrapper.appendChild(div);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PIN DRAG
+// ═══════════════════════════════════════════════════════════════════════════
+
+function startPinDrag(e0,pinId){
+  var pin=pins.find(function(p){return p.id===pinId;});
+  if(!pin)return;
+  var sx=e0.clientX,sy=e0.clientY,px=pin.x,py=pin.y,sc=currentTx.scale;
+  function onMove(ev){
+    var dx=(ev.clientX-sx)/sc,dy=(ev.clientY-sy)/sc;
+    pins=pins.map(function(p){return p.id===pinId?Object.assign({},p,{x:px+dx,y:py+dy}):p;});
+    renderPins();
+  }
+  function onUp(){persist();window.removeEventListener('mousemove',onMove);window.removeEventListener('mouseup',onUp);}
+  window.addEventListener('mousemove',onMove);
+  window.addEventListener('mouseup',onUp);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MAP PAN / ZOOM
+// ═══════════════════════════════════════════════════════════════════════════
+
+(function(){
+  var canvas=document.getElementById('map-canvas');
+  var panning=false,sx,sy;
+  canvas.addEventListener('mousedown',function(e){
+    if(e.button!==0||e.target.closest('.pin'))return;
+    panning=true;sx=e.clientX-currentTx.x;sy=e.clientY-currentTx.y;
+    canvas.style.cursor='grabbing';
+  });
+  window.addEventListener('mousemove',function(e){
+    if(!panning)return;
+    currentTx=Object.assign({},currentTx,{x:e.clientX-sx,y:e.clientY-sy});
+    applyTransform();
+  });
+  window.addEventListener('mouseup',function(){
+    if(!panning)return;
+    panning=false;canvas.style.cursor='';saveTx();
+  });
+  canvas.addEventListener('wheel',function(e){
+    e.preventDefault();
+    var delta=e.deltaY>0?0.9:1.1;
+    var rect=canvas.getBoundingClientRect();
+    var mx=e.clientX-rect.left,my=e.clientY-rect.top;
+    var ns=Math.max(0.08,Math.min(8,currentTx.scale*delta));
+    var r=ns/currentTx.scale;
+    currentTx={x:mx-r*(mx-currentTx.x),y:my-r*(my-currentTx.y),scale:ns};
+    applyTransform();saveTx();
+  },{passive:false});
+})();
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MAP DROP (drag entity → place pin on current map)
+// ═══════════════════════════════════════════════════════════════════════════
+
+(function(){
+  var canvas=document.getElementById('map-canvas');
+  canvas.addEventListener('dragover',function(e){e.preventDefault();canvas.classList.add('dragover');});
+  canvas.addEventListener('dragleave',function(){canvas.classList.remove('dragover');});
+  canvas.addEventListener('drop',function(e){
+    e.preventDefault();canvas.classList.remove('dragover');
+    if(!isDM)return;
+    var entityId=e.dataTransfer.getData('entityId');
+    if(!entityId)return;
+    var mapId=getCurrentMapId();
+    if(pins.some(function(p){return p.entityId===entityId&&p.mapId===mapId;})){toast('Already on this map — drag pin to reposition');return;}
+    var m=getMap(mapId);
+    if(!m||!m.image){toast('Upload a map image first');return;}
+    var rect=canvas.getBoundingClientRect();
+    var mx=e.clientX-rect.left,my=e.clientY-rect.top;
+    var px=(mx-currentTx.x)/currentTx.scale,py=(my-currentTx.y)/currentTx.scale;
+    // New pins default to DM-only (visible:false) for safety
+    var newPin={id:uid(),entityId:entityId,mapId:mapId,x:px,y:py,visible:false};
+    pins=[...pins,newPin];
+    persist();renderPins();renderSidebar();renderInitiative();
+    var ent=entities.find(function(x){return x.id===entityId;});
+    toast('Pinned (DM only): '+(ent?ent.name:entityId)+' — double-click pin or use Reveal to show players');
+  });
+})();
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MAP FILE UPLOAD
+// ═══════════════════════════════════════════════════════════════════════════
+
+function handleMapFile(file){
+  if(!file)return;
+  var r=new FileReader();
+  r.onload=function(ev){
+    var mapId=getCurrentMapId();
+    saveMapImage(mapId,ev.target.result);
+    var m=getMap(mapId);
+    var img=document.getElementById('map-img');
+    img.src=ev.target.result;img.style.display='block';
+    document.getElementById('map-placeholder').style.display='none';
+    currentTx={x:0,y:0,scale:1};applyTransform();saveTx();
+    toast('Map image uploaded: '+(m?m.name:''));
+    // Push image to remote so players can see it
+    pushMapImage(mapId,ev.target.result);
+  };
+  r.readAsDataURL(file);
+}
+document.getElementById('map-upload').addEventListener('change',function(e){handleMapFile(e.target.files[0]);});
+document.getElementById('map-upload2').addEventListener('change',function(e){handleMapFile(e.target.files[0]);});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ZOOM CONTROLS
+// ═══════════════════════════════════════════════════════════════════════════
+
+document.getElementById('zoom-in').addEventListener('click',function(){
+  var c=document.getElementById('map-canvas').getBoundingClientRect();
+  var cx=c.width/2,cy=c.height/2,ns=Math.min(8,currentTx.scale*1.2),r=ns/currentTx.scale;
+  currentTx={x:cx-r*(cx-currentTx.x),y:cy-r*(cy-currentTx.y),scale:ns};
+  applyTransform();saveTx();
+});
+document.getElementById('zoom-out').addEventListener('click',function(){
+  var c=document.getElementById('map-canvas').getBoundingClientRect();
+  var cx=c.width/2,cy=c.height/2,ns=Math.max(0.08,currentTx.scale/1.2),r=ns/currentTx.scale;
+  currentTx={x:cx-r*(cx-currentTx.x),y:cy-r*(cy-currentTx.y),scale:ns};
+  applyTransform();saveTx();
+});
+document.getElementById('zoom-reset').addEventListener('click',function(){currentTx={x:0,y:0,scale:1};applyTransform();saveTx();});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TOOLBAR BUTTONS
+// ═══════════════════════════════════════════════════════════════════════════
+
+document.getElementById('btn-add').addEventListener('click',function(){openEntityModal(null);});
+document.getElementById('btn-labels').addEventListener('click',function(){
+  showLabels=!showLabels;this.classList.toggle('active',showLabels);renderPins();
+});
+document.getElementById('btn-grid').addEventListener('click',function(){
+  showGrid=!showGrid;
+  document.getElementById('map-grid').style.display=showGrid?'block':'none';
+  this.classList.toggle('active',showGrid);
+});
+document.getElementById('btn-init').addEventListener('click',function(){
+  var p=document.getElementById('init-panel');
+  var show=!p.classList.contains('show');
+  p.classList.toggle('show',show);this.classList.toggle('active',show);
+  if(show)renderInitiative();
+});
+document.getElementById('btn-maps').addEventListener('click',function(){
+  var p=document.getElementById('map-manager');
+  var show=!p.classList.contains('show');
+  p.classList.toggle('show',show);this.classList.toggle('active',show);
+  if(show)renderMapManager();
+});
+document.getElementById('mm-close').addEventListener('click',function(){
+  document.getElementById('map-manager').classList.remove('show');
+  document.getElementById('btn-maps').classList.remove('active');
+});
+document.getElementById('mm-new').addEventListener('click',function(){openMapModal(null);});
+document.getElementById('mm-parent').addEventListener('click',function(){
+  var m=getMap(activeMapId);
+  if(m&&m.parentMapId)switchMap(m.parentMapId);
+  else toast('Already at top level');
+});
+document.getElementById('btn-reveal-all').addEventListener('click',function(){
+  var mapId=getCurrentMapId();
+  var changed=0;
+  pins=pins.map(function(p){if(p.mapId===mapId&&!p.visible){changed++;return Object.assign({},p,{visible:true});}return p;});
+  persist();renderPins();renderSidebar();
+  toast('Revealed '+changed+' pin(s)');
+});
+document.getElementById('btn-hide-all').addEventListener('click',function(){
+  var mapId=getCurrentMapId();
+  var changed=0;
+  pins=pins.map(function(p){if(p.mapId===mapId&&p.visible){changed++;return Object.assign({},p,{visible:false});}return p;});
+  persist();renderPins();renderSidebar();
+  toast('Hidden '+changed+' pin(s)');
+});
+document.getElementById('btn-push').addEventListener('click',function(){pushMapToPlayers(activeMapId);});
+document.getElementById('btn-force-sync').addEventListener('click',function(){
+  if(!SYNC_BIN_ID||!SYNC_API_KEY){toast('Configure sync first (click Sync button)');return;}
+  clearTimeout(syncTimer);
+  doRemoteWrite();
+  toast('Sync pushed to bin');
+});
+document.getElementById('btn-push-this').addEventListener('click',function(){pushMapToPlayers(activeMapId);});
+document.getElementById('btn-release-push').addEventListener('click',releasePush);
+document.getElementById('btn-logout').addEventListener('click',function(){
+  localStorage.removeItem('dm-session-dm');
+  localStorage.removeItem('dm-session-player');
+  localStorage.removeItem('dm-session');
+  location.reload();
+});
+
+// ─── INITIATIVE PANEL ────────────────────────────────────────────────────────
+
+document.getElementById('init-close').addEventListener('click',function(){
+  document.getElementById('init-panel').classList.remove('show');
+  document.getElementById('btn-init').classList.remove('active');
+});
+document.getElementById('init-roll').addEventListener('click',function(){
+  initRolls={};
+  initEligible().forEach(function(e){initRolls[e.id]=Math.floor(Math.random()*20)+1+(parseInt(e.initiative)||0);});
+  initTurn=0;renderInitiative();
+});
+document.getElementById('init-next').addEventListener('click',function(){
+  var sorted=getSortedInit();
+  initTurn=(initTurn+1)%Math.max(1,sorted.length);
+  renderInitiative();
+});
+
+function renderInitiative(){
+  var list=document.getElementById('init-list');
+  var sorted=getSortedInit();
+  var sub=document.getElementById('init-sub');
+  if(sub)sub.textContent='PCs & Monsters on map ('+sorted.length+')';
+  if(!sorted.length){list.innerHTML='<div style="padding:10px;font-size:11px;color:var(--t3);text-align:center">No eligible entities on this map</div>';return;}
+  var header='<div class="init-col-hd"><span class="ich-name">Name</span><span class="ich-bonus" title="Initiative bonus">Bon</span><span class="ich-roll" title="Rolled total">Roll</span></div>';
+  var rows=sorted.map(function(e,i){
+    var rollVal=initRolls[e.id]!==undefined?initRolls[e.id]:'';
+    return '<div class="init-row'+(i===initTurn?' active':'')+'" data-id="'+e.id+'">'+
+      '<div class="idot" style="background:'+e.color+'"></div>'+
+      '<span class="iname">'+esc(e.name)+'</span>'+
+      '<input class="iinit-edit" type="number" value="'+e.initiative+'" title="Initiative bonus" data-eid="'+e.id+'">'+
+      '<input class="iroll-edit" type="number" value="'+rollVal+'" placeholder="—" title="Rolled total" data-eid="'+e.id+'">'+
+      '</div>';
+  }).join('');
+  list.innerHTML=header+rows;
+  list.querySelectorAll('.init-row').forEach(function(row){
+    row.addEventListener('click',function(e){if(e.target.tagName==='INPUT')return;selectEntity(row.dataset.id);});
+  });
+  list.querySelectorAll('.iinit-edit').forEach(function(inp){
+    inp.addEventListener('click',function(e){e.stopPropagation();});
+    inp.addEventListener('change',function(e){e.stopPropagation();var val=parseInt(this.value);if(!isNaN(val))updateInitiative(this.dataset.eid,val);});
+  });
+  list.querySelectorAll('.iroll-edit').forEach(function(inp){
+    inp.addEventListener('click',function(e){e.stopPropagation();});
+    inp.addEventListener('change',function(e){
+      e.stopPropagation();var eid=this.dataset.eid;var val=parseInt(this.value);
+      if(!isNaN(val)){initRolls[eid]=val;}else{delete initRolls[eid];}
+      renderInitiative();
+    });
+  });
+}
+
+// ─── PRESETS ────────────────────────────────────────────────────────────────
+
+document.getElementById('btn-preset').addEventListener('click',function(){
+  var p=document.getElementById('preset-panel');
+  var show=!p.classList.contains('show');
+  p.classList.toggle('show',show);this.classList.toggle('active',show);
+  if(show)renderPresets();
+});
+document.getElementById('preset-close').addEventListener('click',function(){
+  document.getElementById('preset-panel').classList.remove('show');
+  document.getElementById('btn-preset').classList.remove('active');
+});
+document.getElementById('preset-save').addEventListener('click',function(){
+  var name=document.getElementById('preset-name').value.trim();
+  if(!name){toast('Enter a preset name');return;}
+  var existing=presets.find(function(p){return p.name===name;});
+  var snap=buildPresetSnapshot(name);
+  if(existing){presets=presets.map(function(p){return p.name===name?snap:p;});toast('Preset updated: '+name);}
+  else{presets=[...presets,snap];toast('Preset saved: '+name);}
+  document.getElementById('preset-name').value='';
+  persist();renderPresets();
+});
+
+function buildPresetSnapshot(name){
+  var mapId=getCurrentMapId();
+  var snapPins=pinsForMap(mapId).filter(function(p){
+    var ent=entities.find(function(e){return e.id===p.entityId;});
+    return ent&&ent.type!=='PC';
+  });
+  return {id:uid(),name:name,mapId:mapId,pins:snapPins.map(function(p){return {id:p.id,entityId:p.entityId,x:p.x,y:p.y,visible:p.visible};})};
+}
+
+function loadPreset(presetId){
+  var preset=presets.find(function(p){return p.id===presetId;});
+  if(!preset)return;
+  var mapId=preset.mapId||getCurrentMapId();
+  // Remove non-PC pins from target map
+  pins=pins.filter(function(p){
+    if(p.mapId!==mapId)return true;
+    var ent=entities.find(function(e){return e.id===p.entityId;});
+    return ent&&ent.type==='PC';
+  });
+  var newPins=preset.pins.map(function(p){
+    return {id:uid(),entityId:p.entityId,mapId:mapId,x:p.x,y:p.y,visible:p.visible||false};
+  }).filter(function(p){return entities.some(function(e){return e.id===p.entityId;});});
+  pins=pins.concat(newPins);
+  if(mapId!==getCurrentMapId())switchMap(mapId);
+  persist();renderAll();renderInitiative();
+  toast('Loaded preset: '+preset.name+' ('+newPins.length+' pins)');
+}
+
+function deletePreset(presetId){
+  presets=presets.filter(function(p){return p.id!==presetId;});
+  persist();renderPresets();toast('Preset deleted');
+}
+
+function renderPresets(){
+  var list=document.getElementById('preset-list');
+  if(!presets.length){list.innerHTML='<div style="padding:10px;font-size:11px;color:var(--t3);text-align:center;font-style:italic">No presets saved</div>';return;}
+  list.innerHTML=presets.map(function(p){
+    var count=p.pins?p.pins.length:0;
+    var m=p.mapId?getMap(p.mapId):null;
+    return '<div class="preset-row" data-pid="'+p.id+'">'+
+      '<div style="flex:1;overflow:hidden">'+
+      '<div class="preset-row-name">'+esc(p.name)+'</div>'+
+      (m?'<div style="font-size:9px;color:var(--t3);font-family:JetBrains Mono,monospace">'+esc(m.name)+'</div>':'')+
+      '</div>'+
+      '<span class="preset-row-count">'+count+'p</span>'+
+      '<div class="preset-actions">'+
+      '<button class="btn sm blue preset-load" data-pid="'+p.id+'">Load</button>'+
+      '<button class="btn sm red preset-del" data-pid="'+p.id+'">Del</button>'+
+      '</div></div>';
+  }).join('');
+  list.querySelectorAll('.preset-load').forEach(function(btn){
+    btn.addEventListener('click',function(e){e.stopPropagation();loadPreset(this.dataset.pid);});
+  });
+  list.querySelectorAll('.preset-del').forEach(function(btn){
+    btn.addEventListener('click',function(e){e.stopPropagation();deletePreset(this.dataset.pid);});
+  });
+}
+
+// ─── SEARCH / FILTERS ────────────────────────────────────────────────────────
+
+document.getElementById('search').addEventListener('input',function(){searchTerm=this.value;renderSidebar();});
+document.getElementById('sb-filters').addEventListener('click',function(e){
+  var chip=e.target.closest('.chip');if(!chip)return;
+  var f=chip.dataset.filter,v=chip.dataset.val;
+  filters[f]=filters[f]===v?null:v;
+  document.querySelectorAll('.chip[data-filter="'+f+'"]').forEach(function(c){c.classList.remove('on');});
+  if(filters[f])chip.classList.add('on');
+  renderSidebar();
+});
+
+// ─── EXPORT / IMPORT ────────────────────────────────────────────────────────
+
+document.getElementById('btn-export').addEventListener('click',function(){
+  var data=JSON.stringify({entities:entities,maps:maps.map(function(m){return Object.assign({},m);}),pins:pins,presets:presets,activeMapId:activeMapId,forcedPlayerMapId:forcedPlayerMapId},null,2);
+  var a=document.createElement('a');
+  a.href='data:application/json;charset=utf-8,'+encodeURIComponent(data);
+  a.download='dm-session.json';a.click();
+  toast('Session exported');
+});
+document.getElementById('json-import').addEventListener('change',function(){
+  var file=this.files[0];if(!file)return;
+  var r=new FileReader();
+  r.onload=function(ev){
+    try{
+      var d=JSON.parse(ev.target.result);
+      if(d.entities)entities=d.entities.map(migrateEntity);
+      if(d.maps)maps=d.maps.map(migrateMap);
+      // v2 backward compat: old single-map data → create a default map
+      if(!d.maps&&d.mapDataUrl){
+        var legacyMap={id:'map-legacy',name:'Imported Map',mapType:'other',parentMapId:null,image:d.mapDataUrl,notes:'Imported from v1 save.',tx:d.tx||{x:0,y:0,scale:1}};
+        maps=[legacyMap,...maps];
+        activeMapId='map-legacy';
+      }
+      if(d.pins)pins=d.pins.map(function(p){
+        // v2 backward compat: old pins had no mapId — assign to first map
+        if(!p.mapId)p.mapId=maps[0]?maps[0].id:'';
+        return migratePin(p);
+      });
+      if(d.presets)presets=d.presets;
+      if(d.activeMapId)activeMapId=d.activeMapId;
+      if(d.forcedPlayerMapId!==undefined)forcedPlayerMapId=d.forcedPlayerMapId;
+      persist();renderAll();renderMapManager();renderBreadcrumb();
+      toast('Session imported');
+    }catch(e){toast('Error: invalid file');}
+  };
+  r.readAsText(file);this.value='';
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ENTITY MODAL
+// ═══════════════════════════════════════════════════════════════════════════
+
+function openEntityModal(entity){
+  var isNew=!entity;
+  var e=entity?Object.assign({},entity):{id:uid(),type:'PC',name:'',color:PIN_COLORS[0],ac:10,hp:10,maxHp:10,speed:30,initiative:0,pp:10,conditions:[],notes:'',location:'',cls:'',level:1,player:'',cr:'',attacks:'',faction:'',str:10,dex:10,con:10,int:10,wiz:10,cha:10,plr:10};
+  e=migrateEntity(e);
+  var overlay=document.getElementById('modal-overlay');
+  overlay.style.display='flex';
+  var swatchHTML=PIN_COLORS.map(function(c){return '<div class="sw'+(e.color===c?' on':'')+'" data-color="'+c+'" style="background:'+c+'"></div>';}).join('');
+  var coreInputs=CORE_STATS.map(function(k){return '<div class="fg"><label class="lbl" title="'+CORE_TITLES[k]+'">'+CORE_LABELS[k]+'</label><input id="f-'+k+'" type="number" value="'+e[k]+'" min="1" max="30"></div>';}).join('');
+  overlay.innerHTML='<div class="modal">'+
+    '<div class="modal-hd"><span class="modal-ttl">'+(isNew?'New Entity':'Edit: '+esc(e.name))+'</span><button class="btn sm" id="modal-close">X</button></div>'+
+    '<div class="modal-body">'+
+    '<div class="fgrid">'+
+    '<div class="fg ffull"><label class="lbl">Name *</label><input id="f-name" value="'+esc(e.name)+'" placeholder="Entity name..."></div>'+
+    '<div class="fg"><label class="lbl">Type</label><select id="f-type"><option'+(e.type==='PC'?' selected':'')+'>PC</option><option'+(e.type==='Monster'?' selected':'')+'>Monster</option><option'+(e.type==='NPC'?' selected':'')+'>NPC</option></select></div>'+
+    '<div class="fg"><label class="lbl">Location</label><input id="f-loc" value="'+esc(e.location)+'" placeholder="Tavern, Dungeon B3..."></div>'+
+    '</div>'+
+    '<div class="sec">Combat Stats</div>'+
+    '<div class="fgrid">'+
+    '<div class="fg"><label class="lbl">Max HP</label><input id="f-maxhp" type="number" value="'+e.maxHp+'"></div>'+
+    '<div class="fg"><label class="lbl">Current HP</label><input id="f-hp" type="number" value="'+e.hp+'"></div>'+
+    '<div class="fg"><label class="lbl">Armor Class</label><input id="f-ac" type="number" value="'+e.ac+'"></div>'+
+    '<div class="fg"><label class="lbl">Speed (ft)</label><input id="f-speed" type="number" value="'+e.speed+'"></div>'+
+    '<div class="fg"><label class="lbl">Initiative Bonus</label><input id="f-init" type="number" value="'+e.initiative+'"></div>'+
+    '<div class="fg"><label class="lbl">Passive Perception</label><input id="f-pp" type="number" value="'+e.pp+'"></div>'+
+    '</div>'+
+    '<div class="sec">Core Characteristics</div>'+
+    '<div class="fgrid4">'+coreInputs+'</div>'+
+    '<div id="type-extras"></div>'+
+    '<div class="sec">Pin Color</div>'+
+    '<div class="swatches" id="swatches">'+swatchHTML+'<input type="color" id="f-color" value="'+e.color+'" style="width:22px;height:22px;padding:0;border:none;border-radius:50%;cursor:pointer"></div>'+
+    '<div class="sec">Notes (DM only)</div>'+
+    '<div class="fg ffull"><textarea id="f-notes" style="width:100%">'+esc(e.notes)+'</textarea></div>'+
+    '</div>'+
+    '<div class="modal-ft"><button class="btn" id="modal-cancel">Cancel</button><button class="btn gold" id="modal-save">Save Entity</button></div>'+
+    '</div>';
+  var pickedColor=e.color;
+  function renderTypeExtras(){
+    var t=document.getElementById('f-type').value;
+    var box=document.getElementById('type-extras');
+    if(t==='PC')box.innerHTML='<div class="sec">Player Character</div><div class="fgrid"><div class="fg"><label class="lbl">Class</label><input id="f-cls" value="'+esc(e.cls||'')+'"></div><div class="fg"><label class="lbl">Level</label><input id="f-level" type="number" value="'+(e.level||1)+'"></div><div class="fg ffull"><label class="lbl">Player Name</label><input id="f-player" value="'+esc(e.player||'')+'"></div></div>';
+    else if(t==='Monster')box.innerHTML='<div class="sec">Monster</div><div class="fgrid"><div class="fg"><label class="lbl">Challenge Rating</label><input id="f-cr" value="'+esc(e.cr||'')+'" placeholder="5, 1/2..."></div><div class="fg ffull"><label class="lbl">Attacks / Abilities</label><textarea id="f-attacks" style="width:100%">'+esc(e.attacks||'')+'</textarea></div></div>';
+    else box.innerHTML='<div class="sec">NPC</div><div class="fgrid"><div class="fg ffull"><label class="lbl">Faction / Role</label><input id="f-faction" value="'+esc(e.faction||'')+'"></div></div>';
+  }
+  renderTypeExtras();
+  document.getElementById('f-type').addEventListener('change',renderTypeExtras);
+  overlay.addEventListener('click',function(ev){
+    var sw=ev.target.closest('.sw');
+    if(sw&&sw.dataset.color){pickedColor=sw.dataset.color;overlay.querySelectorAll('.sw').forEach(function(s){s.classList.remove('on');});sw.classList.add('on');document.getElementById('f-color').value=pickedColor;}
+  });
+  document.getElementById('f-color').addEventListener('input',function(){pickedColor=this.value;});
+  function closeModal(){overlay.style.display='none';overlay.innerHTML='';}
+  overlay.addEventListener('click',function(ev){if(ev.target===overlay)closeModal();});
+  document.getElementById('modal-close').addEventListener('click',closeModal);
+  document.getElementById('modal-cancel').addEventListener('click',closeModal);
+  document.getElementById('modal-save').addEventListener('click',function(){
+    var name=document.getElementById('f-name').value.trim();
+    if(!name){document.getElementById('f-name').focus();return;}
+    var t=document.getElementById('f-type').value;
+    var g=function(id){var el=document.getElementById(id);return el?el.value:'';};
+    var gi=function(id,def){var v=parseInt(g(id));return isNaN(v)?def:v;};
+    var stats={};CORE_STATS.forEach(function(k){stats[k]=gi('f-'+k,10);});
+    var updated=Object.assign({},e,stats,{name:name,type:t,color:pickedColor,location:g('f-loc'),hp:gi('f-hp',0),maxHp:gi('f-maxhp',1),ac:gi('f-ac',10),speed:gi('f-speed',30),initiative:gi('f-init',0),pp:gi('f-pp',10),notes:g('f-notes'),cls:t==='PC'?g('f-cls'):e.cls,level:t==='PC'?gi('f-level',1):e.level,player:t==='PC'?g('f-player'):e.player,cr:t==='Monster'?g('f-cr'):e.cr,attacks:t==='Monster'?g('f-attacks'):e.attacks,faction:t==='NPC'?g('f-faction'):e.faction});
+    if(isNew)entities=[...entities,updated];
+    else entities=entities.map(function(x){return x.id===updated.id?updated:x;});
+    persist();renderAll();closeModal();
+    toast(isNew?'Added: '+name:'Saved: '+name);
+  });
+  setTimeout(function(){var el=document.getElementById('f-name');if(el)el.focus();},50);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// LOGIN
+// ═══════════════════════════════════════════════════════════════════════════
+
+function enterApp(asDM){
+  isDM=asDM;
+  if(asDM){save('dm-session-dm','1');}else{save('dm-session-player','1');}
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  var indicator=document.getElementById('mode-indicator');
+  indicator.textContent=asDM?'DM':'Player';
+  indicator.className='mode-indicator '+(asDM?'dm':'player');
+  if(asDM){
+    document.body.classList.remove('player-mode');
+    document.title='DM Command — DM Mode';
+    updateSyncIndicator(SYNC_BIN_ID?'ok':'off');
+    // Restore push status indicator if a push is active
+    if(forcedPlayerMapId){
+      var m=getMap(forcedPlayerMapId);
+      document.getElementById('push-status-name').textContent=m?m.name:'Unknown';
+      document.getElementById('push-status').classList.add('show');
+    }
+  } else {
+    document.body.classList.add('player-mode');
+    document.title='DM Command — Player View';
+    var claimBtn=document.getElementById('btn-claim-pc');
+    if(claimBtn)claimBtn.addEventListener('click',function(){showPCClaimScreen();});
+    // Show initial connecting state
+    var waiting=document.getElementById('player-waiting');
+    if(waiting){
+      // Show a neutral connecting message while we fetch from remote
+      var sub=waiting.querySelector('.pw-sub');
+      if(sub)sub.textContent=SYNC_BIN_ID?'Connecting to game session…':'The DM has not shared a view yet';
+      waiting.style.display='flex';
+    }
+    // Start polling — if bin ID present, this immediately fetches remotely
+    // Do NOT call syncFromStorage here — it would set forcedPlayerMapId=null from
+    // local storage (which remote players don't have), showing "Waiting for DM"
+    startPlayerPolling();
+  }
+  if(isDM){
+    renderAll();
+    renderMapManager();
+    renderBreadcrumb();
+    if(forcedPlayerMapId){
+      var m=getMap(forcedPlayerMapId);
+      document.getElementById('push-status-name').textContent=m?m.name:'Unknown';
+      document.getElementById('push-status').classList.add('show');
+    }
+  }
+}
+
+function bootLogin(){
+  // Load bin ID from URL hash first (for players opening a shared link)
+  loadBinFromHash();
+  // Migrate legacy shared session key
+  var leg=load('dm-session',null);
+  if(leg==='dm'){save('dm-session-dm','1');localStorage.removeItem('dm-session');}
+  if(leg==='player'){save('dm-session-player','1');localStorage.removeItem('dm-session');}
+  if(load('dm-session-dm',null)==='1'){enterApp(true);return;}
+  if(load('dm-session-player',null)==='1'){enterApp(false);return;}
+  // Show login screen
+  document.getElementById('login-screen').classList.remove('hidden');
+  var pwInput=document.getElementById('login-pw');
+  var btn=document.getElementById('login-btn');
+  function tryLogin(){
+    var pw=pwInput.value;
+    var asDM=checkPassword(pw);
+    var badge=document.getElementById('login-mode-display');
+    badge.style.display='block';
+    badge.textContent=asDM?'DM Mode':'Player Mode';
+    badge.className='login-mode-badge '+(asDM?'mode-dm':'mode-player');
+    setTimeout(function(){enterApp(asDM);},300);
+  }
+  btn.addEventListener('click',tryLogin);
+  pwInput.addEventListener('keydown',function(e){if(e.key==='Enter')tryLogin();});
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ONLINE SYNC LOGIC
+// ═══════════════════════════════════════════════════════════════════════════
+
+function updateSyncIndicator(state){
+  var dot=document.getElementById('sync-indicator');
+  if(!dot)return;
+  dot.className='sync-dot '+state; // 'ok', 'err', 'off'
+}
+
+// pushMapImage — images are now embedded in the main payload for the active map.
+// Just trigger a remote persist so the updated image goes out with next write.
+function pushMapImage(mapId,dataUrl){
+  if(!SYNC_BIN_ID||!SYNC_API_KEY)return;
+  // Image is already saved to the maps array by handleMapFile.
+  // remotePersist() will embed it in the next sync payload automatically.
+  remotePersist();
+}
+
+// Wire sync panel UI
+document.getElementById('btn-sync-setup').addEventListener('click',function(){
+  var panel=document.getElementById('sync-panel');
+  panel.classList.add('show');
+  // Pre-fill known values
+  if(SYNC_API_KEY)document.getElementById('sync-apikey').value=SYNC_API_KEY;
+  if(SYNC_BIN_ID)document.getElementById('sync-binid-manual').value=SYNC_BIN_ID;
+  updateShareUrl();
+});
+
+function updateShareUrl(){
+  if(!SYNC_BIN_ID)return;
+  // Include the API key in the share URL so players can read private bins too.
+  // The URL is the shared secret — anyone with the link can read (but not write).
+  var url=window.location.href.split('#')[0]+'#bin='+SYNC_BIN_ID;
+  if(SYNC_API_KEY) url+='&key='+encodeURIComponent(SYNC_API_KEY);
+  var el=document.getElementById('sync-share-url');
+  if(el){el.textContent=url;}
+}
+
+document.getElementById('sync-close-btn').addEventListener('click',function(){
+  document.getElementById('sync-panel').classList.remove('show');
+});
+
+document.getElementById('sync-clear-btn').addEventListener('click',function(){
+  if(!confirm('Clear sync configuration? Players will lose connection.'))return;
+  SYNC_BIN_ID=null;SYNC_API_KEY=null;
+  localStorage.removeItem('sync-bin-id');localStorage.removeItem('sync-api-key');
+  updateSyncIndicator('off');
+  document.getElementById('sync-apikey').value='';
+  document.getElementById('sync-binid-manual').value='';
+  setStatus('Sync config cleared.','info');
+});
+
+document.getElementById('sync-create-btn').addEventListener('click',function(){
+  var key=document.getElementById('sync-apikey').value.trim();
+  if(!key){setStatus('Enter your Master Key first.','err');return;}
+  setStatus('Creating bin...','info');
+  fetch('https://api.jsonbin.io/v3/b',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','X-Master-Key':key,'X-Bin-Name':'dm-command-sync','X-Bin-Private':'false'},
+    body:JSON.stringify({v:3,ts:0,pins:[],entities:[],forcedPlayerMapId:null,mapMeta:[]})
+  }).then(function(r){return r.json();})
+  .then(function(data){
+    if(data.metadata&&data.metadata.id){
+      SYNC_BIN_ID=data.metadata.id;
+      SYNC_API_KEY=key;
+      save('sync-bin-id',SYNC_BIN_ID);
+      save('sync-api-key',SYNC_API_KEY);
+      document.getElementById('sync-binid-manual').value=SYNC_BIN_ID;
+      updateSyncIndicator('ok');
+      updateShareUrl();
+      setStatus('Bin created! ID: '+SYNC_BIN_ID+' — Share the URL below with players.','ok');
+      remotePersist();
+    } else {
+      setStatus('Error: '+(data.message||JSON.stringify(data)),'err');
+    }
+  }).catch(function(e){setStatus('Network error: '+e.message,'err');});
+});
+
+document.getElementById('sync-test-btn').addEventListener('click',function(){
+  var key=document.getElementById('sync-apikey').value.trim();
+  var binId=document.getElementById('sync-binid-manual').value.trim()||SYNC_BIN_ID;
+  if(!key||!binId){setStatus('Enter both Master Key and Bin ID to test.','err');return;}
+  setStatus('Testing...','info');
+  fetch('https://api.jsonbin.io/v3/b/'+binId+'/latest',{
+    headers:{'X-Master-Key':key,'X-Bin-Meta':'false'},cache:'no-store'
+  }).then(function(r){
+    if(r.ok){
+      SYNC_BIN_ID=binId;SYNC_API_KEY=key;
+      save('sync-bin-id',SYNC_BIN_ID);save('sync-api-key',SYNC_API_KEY);
+      updateSyncIndicator('ok');updateShareUrl();
+      setStatus('Connected! Bin ID: '+binId,'ok');
+    } else {
+      setStatus('Failed (HTTP '+r.status+'). Check your Key and Bin ID.','err');
+      updateSyncIndicator('err');
+    }
+  }).catch(function(e){setStatus('Network error: '+e.message,'err');updateSyncIndicator('err');});
+});
+
+document.getElementById('sync-setbin-btn').addEventListener('click',function(){
+  var key=document.getElementById('sync-apikey').value.trim();
+  var binId=document.getElementById('sync-binid-manual').value.trim();
+  if(!binId){setStatus('Enter a Bin ID.','err');return;}
+  SYNC_BIN_ID=binId;
+  if(key){SYNC_API_KEY=key;save('sync-api-key',key);}
+  save('sync-bin-id',binId);
+  updateSyncIndicator('ok');updateShareUrl();
+  setStatus('Bin set: '+binId,'ok');
+});
+
+function setStatus(msg,type){
+  var el=document.getElementById('sync-main-status');
+  el.textContent=msg;el.className='sync-status '+type;el.style.display='block';
+}
+
+// Auto-load bin ID (and optional read key) from URL hash
+// Format: #bin=BINID or #bin=BINID&key=APIKEY
+function loadBinFromHash(){
+  var hash=window.location.hash;
+  var binMatch=hash.match(/[#&]bin=([^&]+)/);
+  var keyMatch=hash.match(/[#&]key=([^&]+)/);
+  if(binMatch&&binMatch[1]){
+    SYNC_BIN_ID=binMatch[1];
+    save('sync-bin-id',SYNC_BIN_ID);
+  }
+  if(keyMatch&&keyMatch[1]){
+    // Player received the API key in the URL — store it so they can read private bins
+    SYNC_API_KEY=keyMatch[1];
+    save('sync-api-key',SYNC_API_KEY);
+  }
+}
+
+// ─── PC CLAIM SCREEN ─────────────────────────────────────────────────────────
+
+function showPCClaimScreen(){
+  var screen=document.getElementById('pc-claim-screen');
+  if(!screen)return;
+  var list=document.getElementById('pc-claim-list');
+  screen.style.display='flex';
+  var pcs=entities.filter(function(e){return e.type==='PC';});
+  if(!pcs.length){
+    list.innerHTML='<div style="text-align:center;color:var(--t3);font-size:13px;font-style:italic;padding:12px">No PC tokens. Ask your DM to create one.</div>';
+  } else {
+    list.innerHTML=pcs.map(function(e){
+      var mine=e.id===myPCId;
+      return '<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid '+(mine?'var(--gold)':'var(--bd)')+';border-radius:var(--r);cursor:pointer;background:'+(mine?'var(--goldBg)':'var(--bg3)')+'" data-pcid="'+e.id+'">'+
+        '<div style="width:10px;height:10px;border-radius:50%;background:'+e.color+';flex-shrink:0"></div>'+
+        '<span style="font-family:Cinzel,serif;font-size:13px;flex:1">'+esc(e.name)+'</span>'+
+        '<span style="font-size:10px;color:'+(mine?'var(--gold)':'var(--t3)')+';font-family:JetBrains Mono,monospace">'+(mine?'CLAIMED':esc(e.player||''))+'</span>'+
+        '</div>';
+    }).join('');
+    list.querySelectorAll('[data-pcid]').forEach(function(row){
+      row.addEventListener('click',function(){
+        myPCId=row.dataset.pcid;
+        save('dm-my-pc',myPCId);
+        screen.style.display='none';
+        // Re-render pins so own pin gets gold glow
+        if(!isDM) playerRenderAll();
+        var pc=entities.find(function(e){return e.id===myPCId;});
+        toast('Playing as: '+(pc?pc.name:'?'));
+      });
+    });
+  }
+  var skipBtn=document.getElementById('pc-claim-skip');
+  if(skipBtn) skipBtn.onclick=function(){
+    myPCId=null;
+    save('dm-my-pc',null);
+    screen.style.display='none';
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// RENDER ALL + BOOT
+// ═══════════════════════════════════════════════════════════════════════════
+
+function renderAll(){
+  renderSidebar();
+  renderMapView();
+  renderBreadcrumb();
+  renderPins();
+}
+
+bootLogin();
+</script>
+</body>
+</html>
